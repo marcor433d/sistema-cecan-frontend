@@ -1,0 +1,30 @@
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color:#c5cdd5;
+  color: #fff;
+}
+
+.user-info,
+.logout-button {
+  transition: background 0.2s !important;
+}
+
+.user-info:hover,
+.logout-button:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/*Calendario*/
+.fc .fc-timegrid-event {
+  margin-bottom: 4px !important;
+  border-radius: 4px;
+
+}
+
+.fc .fc-event-main {
+  padding: 2px 4px;
+  font-size: 0.85em;
+}
+

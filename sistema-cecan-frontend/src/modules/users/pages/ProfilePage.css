@@ -1,0 +1,37 @@
+.profile-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.profile-card {
+    margin-bottom: 24px;
+}
+
+.citas-card {
+    margin-top: 24px;
+}
+
+.fila-programada { background: #e6f7ff !important; }
+.fila-encurso   { background: #fffbe6 !important; }
+.fila-realizada  { background: #f6ffed !important; }
+.fila-cancelada  { background: #fff1f0 !important; }
+
+/* Tags de estado */
+.tag-estado {
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 0 6px;
+}
+.tag-programada   { background-color: #bae7ff; color: #0050b3; }
+.tag-en_curso     { background-color: #ffe58f; color: #ad8b00; }
+.tag-realizada    { background-color: #b7eb8f; color: #237804; }
+.tag-cancelada    { background-color: #ffa39e; color: #a8071a; }
+
+/* Tags de tipo */
+.tag-tipo {
+  font-weight: bold;
+  border-radius: 4px;
+  padding: 0 6px;
+}
+.tag-preconsulta { background-color: #e3f2fd; color: #0d47a1; }
+.tag-consulta    { background-color: #e0f7fa; color: #006064; }
