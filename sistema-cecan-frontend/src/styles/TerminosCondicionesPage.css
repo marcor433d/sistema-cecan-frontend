@@ -1,0 +1,34 @@
+.tc-wrapper {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  line-height: 1.6;
+}
+
+.tc-wrapper a {
+  color: #1890ff;
+  text-decoration: underline;
+}
+
+.tc-wrapper h1,
+.tc-wrapper h2,
+.tc-wrapper h3 {
+  margin-top: 1.5em;
+}
+
+.tc-wrapper p,
+.tc-wrapper li {
+  margin-bottom: 1em;
+}
+
+.tc-wrapper ul,
+.tc-wrapper ol {
+  padding-left: 1.5em;
+}
+
+.tc-wrapper a:hover {
+  color: #40a9ff;
+}

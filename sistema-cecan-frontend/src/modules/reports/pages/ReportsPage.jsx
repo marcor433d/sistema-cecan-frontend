@@ -93,7 +93,14 @@ export default function ReportsPage(){
                         <Card
                             hoverable
                             onClick={() => navigate(tipo.route)}
-                            style={{textAlign: 'center'}}
+                            style={{
+                                textAlign: 'center', 
+                                height: 180, 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                justifyContent: 'center', 
+                                alignItems: 'center',
+                            }}
                         >
                             <div style={{marginBottom: 12}}>{tipo.icon}</div>
                             <Title level={4}>{tipo.label}</Title>

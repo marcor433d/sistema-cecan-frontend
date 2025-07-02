@@ -113,7 +113,9 @@ export default function MainLayout() {
                     </div>
                 </Content>
                 <Footer style={{textAlign: 'center'}}>
-                Centro Estatal de Cancerología del Estado de Durango ©{new Date().getFullYear()} 
+                Centro Estatal de Cancerología del Estado de Durango ©{new Date().getFullYear()} |{' '}
+                <a href="/privacy">Aviso de Privacidad</a> |{' '}
+                <a href="/terms">Términos y Condiciones</a>
                 </Footer>
             </Layout>
         </Layout>

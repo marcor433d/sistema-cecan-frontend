@@ -20,7 +20,8 @@ import IndicacionesQuimioPage from "./modules/reports/pages/IndicacionesQuimioPa
 import SolicitudTransfusion from "./modules/reports/pages/SolicitudTransfusion";
 import InformeIdPacientePage from "./modules/reports/pages/InformeIdPacientePage";
 import SubrogadosPage from "./modules/reports/pages/SubrogadosPage";
-
+import PrivacyPolicyPage from "./modules/users/pages/PrivacyPolicyPage";
+import TerminosCondicionesPage from "./modules/users/pages/TerminosCondicionesPage";
 
 function PrivateRoute({children}) {
   const {token} = useAuth();
@@ -58,6 +59,8 @@ export default function App() {
               <Route path="/informes/informe-id-paciente" element={<InformeIdPacientePage />}/>
               <Route path="/informes/subrogados" element={<SubrogadosPage />}/>
               <Route path="perfil" element={<ProfilePage />} />
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TerminosCondicionesPage />}/>
           </Route>
 
           {/*Operativamente no llegas aquí, pero por si acaso: */}

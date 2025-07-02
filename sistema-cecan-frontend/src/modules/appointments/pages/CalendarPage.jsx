@@ -21,6 +21,25 @@ import EventLegend from '../../../components/EventLegend';
 
 const { Title } = Typography;
 
+//Colores
+const EVENT_COLORS = {
+        CLINICA_DE_HERIDAS_Y_ESTOMAS:   '#4e73df',
+        LABORATORIO:                    '#1cc88a',
+        NUTRICION:                      '#36b9cc',
+        CONSULTA:                       '#007bff',
+        PRECONSULTA:                    '#6610f2',
+        CLINICA_DEL_DOLOR:              '#e74a3b',
+        PSICOLOGIA:                     '#f6c23e',
+        MASTOGRAFIA:                    '#d63384',
+        ULTRASONIDO:                    '#20c997',
+        CUIDADOS_PALIATIVOS:            '#fd7e14',
+        MASTOGRAFIA_MATUTINA:           '#6f42c1',
+        VALORACIONES_PRE_ANESTESICAS:   '#343a40',
+        FESTIVO:                        '#dc3545',
+        AUSENCIA:                       '#fd7e14',
+};
+
+
 export default function CalendarPage(){
 
     const [loading, setLoading] = useLoading({
@@ -30,7 +49,7 @@ export default function CalendarPage(){
         ausencia: false,
         update: false,
     });
-    const[events, setEvents] = useState([]);
+    
     
     const calendarRef = useRef(null);
     const[modalVisible, setModalVisible] = useState(false);
@@ -40,6 +59,16 @@ export default function CalendarPage(){
     const[medicos, setMedicos]=useState([]);
     const lastRange = useRef({start: null, end: null});
     const[estadoOptions, setEstadoOptions] = useState([]);
+
+    //filtrado
+    const [fullEvents, setFullEvents] = useState([]);
+    const[events, setEvents] = useState([]);
+    const[filterField, setFilterField] = useState(null);
+    const [filterValue, setFilterValue] = useState(null);
+    const medicoFilter = (filterField === 'medico' ? filterValue : null)
+
+
+
 
 
     //Estado y modal para detalle
@@ -55,8 +84,8 @@ export default function CalendarPage(){
     const [statusVisible, setStatusVisible] = useState(false);
     const [statusForm] = Form.useForm();
 
-    //Estado para filtrar
-    const [filtroMedico, setFiltroMedico] = useState(null);
+   
+    
 
     //Modales para festivos y ausencias
     const [festivoModalVisible,setFestivoModalVisible] = useState(false);
@@ -75,23 +104,7 @@ export default function CalendarPage(){
     const { user } = useContext(AuthContext);
     const isAdminOrAdmision = ['ADMIN', 'ADMISION'].includes(user.rol);
     const [userAbsences, setUserAbsences] = useState([]);
-    //Colores
-    const EVENT_COLORS = {
-            CLINICA_DE_HERIDAS_Y_ESTOMAS:   '#4e73df',
-            LABORATORIO:                    '#1cc88a',
-            NUTRICION:                      '#36b9cc',
-            CONSULTA:                       '#007bff',
-            PRECONSULTA:                    '#6610f2',
-            CLINICA_DEL_DOLOR:              '#e74a3b',
-            PSICOLOGIA:                     '#f6c23e',
-            MASTOGRAFIA:                    '#d63384',
-            ULTRASONIDO:                    '#20c997',
-            CUIDADOS_PALIATIVOS:            '#fd7e14',
-            MASTOGRAFIA_MATUTINA:           '#6f42c1',
-            VALORACIONES_PRE_ANESTESICAS:   '#343a40',
-            FESTIVO:                        '#dc3545',
-            AUSENCIA:                       '#fd7e14',
-    };
+    
     //Errores
     const [errorCalendar, setErrorCalendar] = useState(null);
     const [appointmentError, setAppointmentError] = useState(null);
@@ -120,7 +133,7 @@ export default function CalendarPage(){
             pacienteExpediente: ev.pacienteExpediente
             }
         };
-    }, [EVENT_COLORS]);
+    }, []);
 
     //Función de carga inicial de opciones de tipo de cita y médicos
     const loadFormOptions = useCallback(async () => {
@@ -142,7 +155,35 @@ export default function CalendarPage(){
             .catch(() => message.error('No se pudieron cargar los estados'));
         
         loadFormOptions();
-    },[loadFormOptions])
+    },[loadFormOptions]);
+
+    //efecto que aplica todo los filtros sobre fullEvents
+    useEffect(() => {
+        let f = fullEvents;
+        if(filterField && filterValue != null){
+            switch(filterField){
+                case 'medico':
+                    f = f.filter(ev => ev.extendedProps.usuarioCedula === filterValue);
+                    calendarRef.current.getApi().refetchEvents()
+                break;
+                case 'tipo':
+                    f = f.filter(ev => ev.extendedProps.tipo === filterValue);
+                    calendarRef.current.getApi().refetchEvents()
+                break;
+                case 'estado':
+                    f = f.filter(ev => ev.extendedProps.estado === filterValue);
+                    calendarRef.current.getApi().refetchEvents()
+                break;
+                case 'paciente':
+                    f = f.filter(ev => ev.extendedProps.pacienteExpediente === filterValue);
+                    calendarRef.current.getApi().refetchEvents()
+                break;
+            }
+        }
+        setEvents(f);
+
+
+    }, [fullEvents, filterField,filterValue]);
 
     //Carga inicial de citas
     const handleDatesSet = useCallback(async({startStr, endStr}) => {
@@ -153,8 +194,8 @@ export default function CalendarPage(){
         setErrorCalendar(null);
         setLoading({type: 'SET', key: 'calendar', value: true});
         try{
-            const {data} = await fetchCalendarEvents(startStr, endStr, filtroMedico);
-            setEvents(data.map(mapToFCEvent));
+            const {data} = await fetchCalendarEvents(startStr, endStr, medicoFilter);
+            setFullEvents(data.map(mapToFCEvent));
         } catch(e){
             const backendMsg=
             e.response?.data?.message
@@ -164,7 +205,7 @@ export default function CalendarPage(){
         } finally {
             setLoading({type: 'SET', key: 'calendar', value: false});
         }
-    }, [filtroMedico, mapToFCEvent, setLoading]);
+    }, [medicoFilter, mapToFCEvent, setLoading]);
 
     const openModal = () => {
         setModalVisible(true);
@@ -344,7 +385,7 @@ export default function CalendarPage(){
         }
     };
 
-    const handleFilterChance = async (cedula) => {
+    /*const handleFilterChance = async (cedula) => {
         const filtro = cedula || null;
         setFiltroMedico(filtro);
         
@@ -362,7 +403,7 @@ export default function CalendarPage(){
         } finally {
             setLoading({type: 'SET', key: 'calendar', value: false});
         }
-    };
+    };*/
 
     //Manejadores para festivos
     const handleCreateFestivo = async (vals) => {
@@ -506,20 +547,72 @@ export default function CalendarPage(){
         <Divider/>
             <Space style={{marginBottom: 16}}>
                 <Select
-                    showSearch
+                    placeholder="Selecciona filtro"
+                    style={{width: 160}}
                     allowClear
-                    placeholder="Filtrar por médico"
-                    style={{width: 260}}
-                    onChange={handleFilterChance}
-                    optionFilterProp='children'
+                    value={filterField}
+                    onChange={field => {
+                        setFilterField(field);
+                        setFilterValue(null);
+                    }}
+                >
+                    <Select.Option value="medico">Médico</Select.Option>
+                    <Select.Option value="tipo">Tipo de cita</Select.Option>
+                    <Select.Option value="estado">Estado</Select.Option>
+                    <Select.Option value="paciente">Paciente</Select.Option>
+                </Select>
+                {/*campo dinámico*/}
+                {filterField === 'medico' && (
+                    <Select
+                        placeholder="Elige un médico"
+                        style={{width: 200}}
+                        allowClear
+                        value={filterValue}
+                        onChange={setFilterValue}
                     >
                         {medicos.map(m => (
                             <Select.Option key={m.cedula} value={m.cedula}>
-                                {m.nombre} {m.apellidoPaterno} {m.apellidoMaterno} ({m.cedula})
+                            {m.nombre} {m.apellidoPaterno} ({m.cedula})
                             </Select.Option>
                         ))}
                     </Select>
-                    
+                )}
+                {filterField === 'tipo' && (
+                    <Select
+                        placeholder="Elige tipo"
+                        style={{width: 160}}
+                        allowClear
+                        value={filterValue}
+                        onChange={setFilterValue}
+                    >
+                        {tipoCitas.map(t => (
+                            <Select.Option key={t} value={t}>{t}</Select.Option>
+                        ))}
+                    </Select>
+                )}
+                {filterField === 'estado' && (
+                    <Select
+                       placeholder="Elige estado"
+                        style={{ width: 160 }}
+                        allowClear
+                        value={filterValue}
+                        onChange={setFilterValue}
+                    >
+                        {estadoOptions.map(e => (
+                            <Select.Option key={e} value={e}>{e}</Select.Option>
+                        ))}
+                    </Select>
+                )}
+                {filterField === 'paciente' && (
+                    <Input
+                        placeholder="Busca paciente..."
+                        style={{ width: 200 }}
+                        value={filterValue || ''}
+                        onChange={e => setFilterValue(e.target.value)}
+                        allowClear
+                    />
+                )}
+
                     {isAdminOrAdmision && (
                       <>  
                         <Button
