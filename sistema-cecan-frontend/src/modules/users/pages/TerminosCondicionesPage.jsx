@@ -63,7 +63,7 @@ export default function TerminosCondicionesPage(){
 
                 <Title level={2}>10. Contacto</Title>
                 <Paragraph>
-                Si tienes dudas sobre estos Términos, contáctanos al correo: <a href="mailto:contacto@cecan-dgo.gob.mx">contacto@cecan-dgo.gob.mx</a>
+                Si tienes dudas sobre estos Términos, contáctanos al correo: <a href="mailto:cecandgo@outlook.com">cecandgo@outlook.com</a>
                 </Paragraph>
             </Typography>
         </div>

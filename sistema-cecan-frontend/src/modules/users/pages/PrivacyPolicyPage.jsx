@@ -52,7 +52,7 @@ export default function PrivacyPolicyPage(){
                 <Title level={2}>6. Derechos ARCO</Title>
                 <Paragraph>
                 Usted puede ejercer los derechos de Acceso, Rectificación, Cancelación y Oposición (ARCO) enviando un correo a  
-                 {' '}<Link href=" mailto:privacidad@cecan-dgo.gob.mx">privacidad@cecan-dgo.gob.mx</Link> o llamando al +52 618 137 7174.
+                 {' '}<Link href=" mailto:cecandgo@outlook.com">cecandgo@outlook.com</Link> o llamando al +52 618 137 7174.
                 </Paragraph>
                 <Title level={2}>7. Cookies y Tecnologías Similares</Title>
                 <Paragraph>
