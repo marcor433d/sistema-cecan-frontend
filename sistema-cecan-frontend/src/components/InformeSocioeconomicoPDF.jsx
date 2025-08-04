@@ -1,3 +1,11 @@
+/**
+ * Componente `InformeSocioeconomicoPDF` (React + forwardRef):
+ * - Renderiza un informe tipo PDF con datos socioeconómicos de un paciente.
+ * - Divide el contenido en dos páginas: datos personales y contexto familiar.
+ * - Soporta referencia externa (ref) para impresión/exportación.
+ * Props:
+ * - `informe`: Objeto con toda la información del paciente (datos personales, familiares, vivienda, economía, etc.).
+ */
 import React, { forwardRef } from "react";
 import "../styles/InformeSocioeconomicoPDF.css";
 

@@ -1,3 +1,15 @@
+/**
+ * Componente para gestión de usuarios del sistema.
+ * 
+ * Funcionalidades principales:
+ * - Visualiza usuarios en una tabla con búsqueda.
+ * - Muestra detalles del usuario en un Drawer.
+ * - Permite editar, eliminar, cambiar contraseña y crear usuarios.
+ * 
+ * Requiere rol 'ADMIN' o 'SISTEMAS' para operaciones sensibles (crear, editar, eliminar).
+ * 
+ * @component
+ */
 import React, {useEffect, useState} from "react";
 import { Table, Input, Drawer, Descriptions, Spin, Alert, Typography, Space, Form, message, Button, Select, Modal, Divider} from 'antd';
 import { fetchUsers, fetchUsersSearch, fetchUserByCedula, updateUser,changeUserPassword, deleteUser, createUser } from "../../../services/userApi";
@@ -31,7 +43,11 @@ export default function UsersPage() {
    const[showCreatedModal,setShowCreatedModal] = useState(false);
 
 
-   //Carga inicial de todos los usuarios
+   /**
+     * Efecto inicial que:
+     * - Carga todos los usuarios.
+     * - Carga los roles disponibles para el formulario.
+     */
    useEffect(() => {
     loadAll();
     fetchRoles()
@@ -39,6 +55,10 @@ export default function UsersPage() {
         .catch(() => message.error('No puede cargar roles'));
    },[]);
 
+   /**
+     * Carga todos los usuarios desde el backend y actualiza el estado.
+     * Muestra errores si la petición falla.
+     */
    const loadAll = async () => {
     setError(null);
     setLoadingTable(true);
@@ -52,6 +72,12 @@ export default function UsersPage() {
     }
    };
 
+   /**
+     * Realiza búsqueda por nombre o cédula.
+     * Muestra resultados en la tabla o limpia si no se encuentran.
+     * 
+     * @param {string} termino - El texto a buscar.
+     */
    const onSearch = async (termino) => {
     setError(null);
     setLoadingTable(true);
@@ -71,6 +97,11 @@ export default function UsersPage() {
         
    };
 
+   /**
+     * Obtiene el detalle de un usuario por cédula y abre el Drawer.
+     * 
+     * @param {Object} record - Registro seleccionado de la tabla.
+     */
 const onRowClick = (record) => {
     setDrawerVisible(true);
     setLoadingDetail(true);
@@ -83,6 +114,11 @@ const onRowClick = (record) => {
         .finally(()=> setLoadingDetail(false));
 };
 
+/**
+ * Envía los datos del formulario de edición y actualiza el usuario.
+ * 
+ * @param {Object} values - Nuevos valores del usuario.
+ */
 const handleUpdate = async (values) => {
     setError(null);
     setLoadingDetail(true);
@@ -107,6 +143,11 @@ const handleUpdate = async (values) => {
     }
 };
 
+/**
+ * Cambia la contraseña del usuario actual.
+ * 
+ * @param {{newPassword: string}} values - Nueva contraseña a asignar.
+ */
 const handlePwChange = async ({newPassword}) => {
     setError(null);
     setLoadingDetail(true);
@@ -122,6 +163,9 @@ const handlePwChange = async ({newPassword}) => {
     }
 };
 
+/**
+ * Muestra un modal de confirmación y elimina el usuario si se acepta.
+ */
 const handleDelete = () => {
     confirm({
         title:  `¿Eliminar a ${selectedUser.nombre}? `,
@@ -142,12 +186,20 @@ const handleDelete = () => {
     });
 };
 
-//Crear usuarios
+/**
+ * Abre el modal para crear un nuevo usuario.
+ */
 const openCreate = () => {
     setCreateModalVisible(true);
     createForm.resetFields();
 };
 
+/**
+ * Crea un nuevo usuario con los datos ingresados.
+ * Muestra la contraseña generada automáticamente.
+ * 
+ * @param {Object} values - Datos del nuevo usuario.
+ */
 const handleCreate = async values => {
     setCreating(true);
     try{

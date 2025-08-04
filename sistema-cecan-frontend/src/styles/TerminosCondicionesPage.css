@@ -1,3 +1,10 @@
+/**
+ * Estilos para la página de Términos y Condiciones.
+ * 
+ * - `.tc-wrapper`: contenedor principal con fondo blanco, sombra y espaciado.
+ * - Tipografías, márgenes y paddings coherentes para listas y encabezados.
+ * - Colores para enlaces y efecto hover para mejor accesibilidad.
+ */
 .tc-wrapper {
   max-width: 800px;
   margin: 40px auto;

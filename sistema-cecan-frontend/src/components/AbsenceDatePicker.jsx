@@ -1,3 +1,11 @@
+/**
+ * Componente `AbsenceDatePicker`:
+ * - DatePicker personalizado que desactiva fechas según rangos de ausencias.
+ * - Muestra visualmente los días bloqueados con fondo y punto indicador.
+ * - Utiliza Day.js y su plugin `isBetween` para comparar fechas.
+ * Props:
+ * - `absences`: lista de rangos {start, end} que representan días no disponibles.
+ */
 import React from 'react';
 import { DatePicker } from 'antd';
 import dayjs from 'dayjs';

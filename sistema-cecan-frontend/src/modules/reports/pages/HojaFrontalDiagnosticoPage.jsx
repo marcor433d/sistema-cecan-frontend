@@ -1,3 +1,7 @@
+/**
+ * Página para registrar la Hoja Frontal de Diagnóstico.
+ * Permite ingresar diagnósticos nosológicos asociados a un paciente y almacenarlos.
+ */
 import React, {useEffect, useState} from "react";
 import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Space, Row, Col, Select, Drawer, } from "antd";
 import moment from "moment";
@@ -29,6 +33,9 @@ export default function HojaFrontalDiagnosticoPage(){
     const[drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
+    /**
+   * Carga la lista de médicos con roles autorizados al montar el componente.
+   */
     useEffect(() =>{
         dispatchLoading({ type: "SET", key: "usuario", value: true });
         fetchUsers()
@@ -42,6 +49,10 @@ export default function HojaFrontalDiagnosticoPage(){
             );
     }, [dispatchLoading]);
 
+    /**
+   * Busca un paciente por número de expediente al salir del input.
+   * @param {Object} e - Evento onBlur del input
+   */
     const handleNumExpBlur = ({ target: {value}}) =>{
         if(!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -58,6 +69,11 @@ export default function HojaFrontalDiagnosticoPage(){
             );
     };
 
+    /**
+   * Envío del formulario con diagnóstico.
+   * Crea un reporte en el sistema y abre el visor PDF.
+   * @param {Object} values - Valores del formulario
+   */
     const onFinish = async (values) => {
         dispatchLoading({ type: "SET", key: "payload", value: true });
         try{
@@ -233,14 +249,12 @@ export default function HojaFrontalDiagnosticoPage(){
                                                 optionFilterProp="children"
                                                 style={{width: 240}}
                                                 filterOption={(input, option) =>
-                                                    option.children
-                                                        .toLowerCase()
-                                                        .includes(input.toLowerCase())
+                                                    (option?.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                                                 }
                                             >
                                                 {medicos.map((m)=>  (
                                                     <Select.Option key={m.cedula} value={m.cedula}>
-                                                        {m.nombre} {m.apellidoPaterno} ({m.cedula})
+                                                        {`${m.nombre} ${m.apellidoPaterno} ${m.apellidoMaterno || ""} (${m.cedula})`}
                                                     </Select.Option>
                                                 ))}
                                             </Select>

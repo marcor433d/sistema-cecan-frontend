@@ -1,13 +1,20 @@
+/**
+ * Página de detalle de un paciente.
+ * Muestra información personal, citas, reportes, enfermedades, contactos y más.
+ * Permite actualizar datos si el usuario tiene permiso.
+ */
 import React, {useEffect, useState} from "react";
 import { useParams } from "react-router-dom";
-import { Descriptions, Card, Collapse, Alert, Typography, Divider, Spin, Table,Tag, Drawer, Space, Button, message, Select,Form, Modal, Input, Checkbox, Switch} from "antd";
-import { fetchPatientsByNumExp, fetchPatientsAppointments,fetchPatientsReports, fetchPatientsUpdate} from "../../../services/patientsApi";
+import { Descriptions, Card, Collapse, Alert, Typography, Divider, Spin, Table,Tag, Drawer, Space, Button, message, Select,Form, Modal, Input, Checkbox, Switch, DatePicker} from "antd";
+import { fetchPatientsByNumExp, fetchPatientsAppointments,fetchPatientsReports, fetchPatientsUpdate, fetchPatientsAddEstado, fetchPatientsAddTratamiento} from "../../../services/patientsApi";
 import { useLoading } from "../../../hooks/useLoading";
 import { EyeOutlined, FilePdfOutlined, DownloadOutlined, EditOutlined, PlusOutlined} from '@ant-design/icons';
 import ReportsPdfViewer from "../../../components/ReportsPdfViewer";
 import { fetchImformePdf } from "../../../services/informesApi";
-import { fetchEnfermedadesGD } from "../../../services/enumsApi";
+import { fetchEnfermedadesGD, fetchAllDiagnosticos } from "../../../services/enumsApi";
 import { useAuth } from "../../../context/useAuth";
+import TextArea from "antd/es/input/TextArea";
+import dayjs from "dayjs";
 
 
 const { Title, Text} = Typography;
@@ -41,6 +48,7 @@ export default function PatientsDetailPage(){
     //Direcciones
     const[dirModalVisible, setDirModalVisible] = useState(false);
     const[dirForm] = Form.useForm();
+     /** Cierra el modal de direcciones y limpia el form */
     const closeDirModal = () => {
         setDirModalVisible(false);
         dirForm.resetFields();
@@ -51,6 +59,8 @@ export default function PatientsDetailPage(){
     const [tieneEnfCronicas, setTieneEnfCronicas] = useState(false);
     const [enfermedadesOpciones, setEnfermedadesOpciones] = useState([]);
 
+    const [diagnosticoOpciones, setDiagnosticoOpciones] = useState([]);
+
     //Integramtes familia
     const [famModalVisible, setFamModalVisible] = useState(false);
     const [famForm] = Form.useForm();
@@ -59,6 +69,66 @@ export default function PatientsDetailPage(){
     const [contsModalVisible, setContsModalVisible] = useState(false);
     const [contsForm] = Form.useForm();
 
+    //estado tratamiento
+    const [estadoActual, setEstadoActual] = useState(null);
+    const getEstadoColor = (tipo) => {
+        if(!tipo) return "default";
+        if (tipo.includes("CONSULTA 1RA VEZ")) return "green";
+        if (tipo.includes("SUBSECUENTE")) return "blue";
+        if (tipo.includes("VIGILANCIA")) return "gold";
+        if (tipo.includes("PALIATIVO")) return "pink";
+         if (tipo.includes("DEFUNCIÓN")) return "red";
+
+        return "default"; // color por defecto si no coincide
+    };
+    const [estadoModalVisible, setEstadoModalVisible] = useState(false);
+    const [estadoForm] = Form.useForm();
+    const closeEstadoModal = () => {
+        setEstadoModalVisible(false);
+        estadoForm.resetFields();
+    };
+
+    //tratamientos
+    const [tratamientosModalVisible, setTratamientosModalVisible] = useState(false);
+    const [tratamientoForm] = Form.useForm();
+    const closeTratamientosModal = () => {
+        setTratamientosModalVisible(false);
+        tratamientoForm.resetFields();
+    };
+    const openTratamientosModal = async () => {
+        try {
+            //Si no hay tratamientos registrados, crea uno vacío
+            if(!paciente.tratamientos || paciente.tratamientos.length === 0){
+                 await fetchPatientsAddTratamiento(paciente.numExpediente,{
+                tipo: '',
+                descripcion: '',
+                fecha:null,
+                numExpediente: paciente.numExpediente   
+            });
+        }
+            //Recargar los datos
+            const {data} = await fetchPatientsByNumExp(numExpediente);
+
+            //convertir fecha a dayjs
+            const tratamientosConFecha = data.tratamientos.map(t => ({
+                ...t,
+                fecha: t.fecha ? dayjs(t.fecha) : null,
+            }));
+
+            setPaciente({...data, tratamientos: tratamientosConFecha});
+        
+        //Establecer los valores del formulario con los tratamientos actuales
+        tratamientoForm.setFieldValue({
+            tratamientos: tratamientosConFecha
+        });
+
+        setTratamientosModalVisible(true);
+        }catch {
+            message.error("Error al abrir el modal de tratamientos");
+        }
+    };
+
+     /** Cierra el modal de nombre y resetea el form */
     const closeNameModal = () => {
         setNameModalVisible(false);
         nameForm.resetFields();
@@ -68,16 +138,33 @@ export default function PatientsDetailPage(){
     const { user: me} = useAuth();
     const canEdit = ['ADMISION','ADMIN','TRABAJOSOCIAL'].includes(me?.rol);
 
+     /**
+     * Muestra un campo opcional si hay valor, o un mensaje si está vacío y el usuario puede editar.
+     * @param {string} value - Valor del campo
+     * @returns {string}
+     */
     function renderField(value){
         if(value !=null && value !== '') return value;
         if(canEdit) return 'Haga click para completar';
         return '';
     }
 
+    /**
+     * Carga datos del paciente, citas y reportes al montar el componente.
+     */
     useEffect(() => {
         dispatchLoading({type: "SET", key: "info", value:true});
         fetchPatientsByNumExp(numExpediente)
-            .then(({data}) => setPaciente(data))
+            .then(({data}) => {
+                setPaciente(data);
+                if(data.estadoTratamientos?.length > 0){
+                    const estadoMasReciente = [...data.estadoTratamientos].sort((a,b) => new Date(b.fecha) - new Date(a.fecha))[0];
+                    setEstadoActual(estadoMasReciente);
+                }else{
+                    setEstadoActual(null);
+                }
+
+            })
             .catch((e) => setError(e))
             .finally(() => dispatchLoading({type: "SET", key: "info", value:false}));
 
@@ -98,12 +185,18 @@ export default function PatientsDetailPage(){
                 .catch(()=>{});
     },[numExpediente, dispatchLoading]);
 
+    /**
+     * Rellena el formulario de direcciones cuando se abre el modal.
+     */
     useEffect(() => {
         if (dirModalVisible && paciente) {
             dirForm.setFieldsValue({ direcciones: paciente.direcciones });
         }
     }, [dirModalVisible, paciente, dirForm]);
 
+    /**
+     * Muestra un mensaje cuando se actualiza algún dato.
+     */
     useEffect(() => {
         if (justUpdated) {
         message.success(`${justUpdated} actualizado`);
@@ -111,6 +204,9 @@ export default function PatientsDetailPage(){
         }
     }, [justUpdated]);
 
+    /**
+     * Carga enfermedades crónicas al abrir el modal.
+     */
     useEffect(() => {
     dispatchLoading({ type: "SET", key: "enfermedades", value: true });
     if (enfModalVisible && paciente) {
@@ -135,17 +231,46 @@ export default function PatientsDetailPage(){
 
     }, [enfModalVisible, paciente, enfForm, dispatchLoading]);
 
+    /**
+     * Rellena el formulario de integrantes de la familia.
+     */
     useEffect(() => {
         if (famModalVisible && paciente) {
             famForm.setFieldsValue({ integrantesFamilia: paciente.integrantesFamilia });
         }
     }, [famModalVisible, paciente, famForm]);
 
+    /**
+     * Rellena el formulario de contactos.
+     */
     useEffect(() => {
         if (contsModalVisible && paciente) {
             contsForm.setFieldsValue({ contactos: paciente.contactos });
         }
     }, [contsModalVisible, paciente, contsForm]);
+
+    /**
+     * Rellena el formulario de tratamientos.
+     */
+    useEffect(() => {
+        if (tratamientosModalVisible && paciente) {
+            tratamientoForm.setFieldsValue({ tratamientos: paciente.tratamientos });
+        }
+    }, [tratamientosModalVisible, paciente, tratamientoForm]);
+
+    /**
+     * Carga los diagnósticos desde el backend cuando se monta el componente.
+     */
+    useEffect(() => {
+        fetchAllDiagnosticos()
+            .then((resp) => {
+                setDiagnosticoOpciones(resp.data || []);
+            })
+            .catch((err) => {
+                console.error("Error cargando diagnósticos:", err);
+                message.error("No se pudieron cargar los diagnósticos");
+            });
+    },[]);
 
     if(loading.info){
         return(
@@ -169,6 +294,12 @@ export default function PatientsDetailPage(){
         return <Alert type="warning" message="Paciente no encontrado" />
     }
 
+    /**
+     * Descarga un informe PDF desde el backend.
+     * @async
+     * @param {string} tipo - Tipo de informe (ej. 'hoja clinica', 'estudio socieconomico')
+     * @param {number|string} idInforme - ID del informe
+     */
     const handleDownloadPdf = async (tipo,idInforme) => {
         try {
             const resp = await fetchImformePdf(tipo, idInforme);
@@ -186,7 +317,12 @@ export default function PatientsDetailPage(){
             message.error('Error al descargar el PDF');
         }
     };
-    //Actualizar multiples datos
+    /**
+     * Actualiza múltiples campos del paciente y recarga los datos.
+     * @async
+     * @param {Object} updates - Objeto con los campos a actualizar
+     * @param {string} [label='datos'] - Nombre del bloque actualizado (para el mensaje)
+     */
     const handleUpdateMultiple = async (updates, label = 'datos') => {
         try {
             await fetchPatientsUpdate(paciente.numExpediente, updates);
@@ -199,6 +335,12 @@ export default function PatientsDetailPage(){
         }
     };
 
+     /**
+     * Actualiza un solo campo del paciente.
+     * @async
+     * @param {string} field - Nombre del campo a actualizar
+     * @param {*} value - Nuevo valor
+     */
     const handleUpdate = async (field, value) => {
         try{
             await fetchPatientsUpdate(numExpediente, {[field]: value});
@@ -213,7 +355,11 @@ export default function PatientsDetailPage(){
 
 
 
-
+    /**
+     * Arreglo de paneles desplegables para mostrar la información detallada de un paciente.
+     * Cada panel contiene un encabezado (`label`) y un cuerpo (`children`) con contenido dinámico.
+     * Estos paneles son utilizados dentro de un componente tipo <Collapse />.
+     */
     const panels = [
         {
            key: "panel-info",
@@ -322,17 +468,24 @@ export default function PatientsDetailPage(){
                         </Text>
                     </Descriptions.Item>
                     <Descriptions.Item label="Diagnóstico">
-                        <Text
-                            type={paciente.diagnostico ? undefined : 'secondary'}
-                            italic={!paciente.diagnostico}
-                            editable={ canEdit ? {
-                                icon: <EditOutlined />,
-                                tooltip: 'Editar diagnóstico',
-                                onChange: val => handleUpdate('diagnostico', val),
-                            } : false}
-                            >
-                                {renderField(paciente.diagnostico)}
-                        </Text>
+                        <Select
+                            value={paciente.diagnostico || undefined}
+                            onChange={val => handleUpdate('diagnostico', val)}
+                            style={{minWidth: 200}}
+                            showSearch
+                            placeholder="Selecciona un diagnóstico"
+                            loading={diagnosticoOpciones.length === 0}
+                            optionFilterProp="children"
+                            filterOption={(input, option) =>
+                                option.children.toLowerCase().includes(input.toLowerCase())
+                            }
+                        >
+                            {diagnosticoOpciones.map(d => (
+                                <Select.Option key={d} value={d}>
+                                    {d}
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </Descriptions.Item>
                     <Descriptions.Item label="Grupo Sanguíneo">
                         <Text
@@ -837,6 +990,88 @@ export default function PatientsDetailPage(){
                     pagination={false} size="small" bordered
                     />
                 : <Text type="secondary">No hay informes registrados.</Text>
+        },
+        {
+            key: "estados",
+            label: (
+                <Space>
+                    Estado de Tratamiento
+                    {canEdit && (
+                        <Button
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => setEstadoModalVisible(true)}
+                        >
+                            Actualizar
+                        </Button>
+                    )}
+                </Space>
+                
+            ),
+            children: paciente.estadoTratamientos.length>0
+                ? <Table
+                    dataSource={[...paciente.estadoTratamientos]
+                        .sort((a,b) => new Date(b.fecha) - new Date(a.fecha))
+                    }
+                    columns={[
+                        {title:'Estado',  dataIndex:'tipo',        key:'tipo'},
+                        {title:'Fecha de inicio', dataIndex:'fecha',       key:'fecha'},
+                    ]}
+                    rowKey="id"
+                    pagination={false} size="small" bordered
+                    onRow={record => ({
+                        style: {
+                            backgroundColor: 
+                                record.tipo.includes("CONSULTA 1RA VEZ") ? '#e6ffed' : 
+                                record.tipo.includes("SUBSECUENTE") ? '#e6f7ff' :      
+                                record.tipo.includes("VIGILANCIA") ? '#fffbe6' :      
+                                record.tipo.includes("PALIATIVO") ? '#fff0fdff' : 
+                                record.tipo.includes("DEFUNCIÓN") ? '#fff1f0' :
+                                undefined
+                        }
+                    })}
+                    />
+                : <Text type="secondary">No hay estados de tratamiento registrados.</Text>
+        },
+        {
+            key: "tratamientos",
+            label: (
+                <Space>
+                    Tratamientos
+                    {canEdit && (
+                        <Button
+                            size="small"
+                            icon= {<EditOutlined />}
+                            onClick={openTratamientosModal}
+                        >
+                            Editar tratamientos
+                        </Button>
+                    )}
+                </Space>
+            ),
+            children: paciente.tratamientos.length>0
+                ? (
+                    <Table
+                        dataSource={[...paciente.tratamientos].sort(
+                            (a,b) => new Date(b.fecha) - new Date(a.fecha)
+                        )}
+                        columns={[
+                            { title: "Tipo de Tratamiento", dataIndex: "tipo", key: "tipo" },
+                            { title: "Fecha", dataIndex: "fecha", key: "fecha", render: (fecha) => fecha ? dayjs(fecha).format('DD/MM/YYYY') : '-'},
+                            { title: "Descripción", dataIndex: "descripcion", key: "descripcion", render: (text) => (
+                                <div style={{whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxWidth: 300}}>
+                                    {text}
+                                </div>
+                            ) },
+                        ]}
+                        rowKey="id"
+                        pagination={false}
+                        size="small"
+                        bordered
+                    />
+                ) : (
+                    <Text type="secondary">No hay tratamientos registrados.</Text>
+                )
         }
     ];
 
@@ -845,7 +1080,24 @@ export default function PatientsDetailPage(){
     <>
        <Card variant="bordered" style={{ maxWidth: 800, margin: "auto", padding: 24 }}>
             <Title level={2}>Perfil de Paciente</Title>
+            <div style={{ marginBottom: 8 }}>
             <Text type="secondary">Expediente: {paciente.numExpediente}</Text>
+            </div>
+            <div style={{ marginBottom: 8 }}>
+            {estadoActual ? (
+                <Tag color={getEstadoColor(estadoActual.tipo)}>
+                    ESTADO: {estadoActual.tipo}
+                </Tag>
+            ) : (
+                canEdit && (
+                    <Button
+                        type="dashed"
+                        onClick={() => setEstadoModalVisible(true)}
+                    >
+                        Agregar Estado de Tratamiento
+                    </Button>
+            ))}
+            </div>
             <Divider />
 
             <Collapse defaultActiveKey={["info"]} destroyOnHidden items={panels} />
@@ -1260,6 +1512,150 @@ export default function PatientsDetailPage(){
                 </Form.List>
             </Form>
         </Modal>
+        <Modal
+            title="Agregar Estado de tratamiento"
+            open={estadoModalVisible}
+            onCancel={closeEstadoModal}
+            onOk={() => {
+                estadoForm.validateFields()
+                .then(async values => {
+                    try {
+                        await fetchPatientsAddEstado(numExpediente, values);
+                        
+                        message.success("Estado de tratamiento agregado correctamente");
+                        closeEstadoModal();
+                        // recargar el paciente para mostrar el nuevo estado
+                        const { data } = await fetchPatientsByNumExp(numExpediente);
+                        setPaciente(data);
+
+                        setEstadoActual(
+                            data.estadoTratamientos.length > 0
+                                ? data.estadoTratamientos
+                                    .slice() //copia para no mutar original
+                                    .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0]
+                                : null
+                        );
+                    }catch {
+                        message.error("Error al agregar el estado de tratamiento");
+                    }
+            })
+            .catch(() => {});
+            }}
+            >
+                <Form form={estadoForm} layout="vertical">
+                    <Form.Item
+                        name="tipo"
+                        label="Estado de tratamiento"
+                        rules={[{ required: true, message: 'Selecciona un estado' }]}
+                    >
+                        <Select placeholder="Selecciona un estado">
+                            <Option value="CONSULTA 1RA VEZ">Consulta 1ra vez</Option>
+                            <Option value="SUBSECUENTE">Subsecuente</Option>
+                            <Option value="VIGILANCIA">Vigilancia</Option>
+                            <Option value="PALIATIVO">Paliativo</Option>
+                            <Option value="DEFUNCIÓN">Defunción</Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item
+                        name="fecha"
+                        label="Fecha del estado"
+                        rules={[{ required: true, message: 'Selecciona una fecha' }]}
+                    >
+                        <DatePicker placeholder="Selecciona una fecha" />
+                    </Form.Item>
+                </Form>
+            </Modal>
+            <Modal
+                title="Editar Tratamientos"
+                open={tratamientosModalVisible}
+                width={700}
+                onCancel={closeTratamientosModal}
+                onOk={async () => {
+                    try {
+                        const vals = await tratamientoForm.validateFields();
+                        await handleUpdateMultiple({ tratamientos: vals.tratamientos }, 'tratamientos');
+                        closeTratamientosModal();
+                    } catch (err) {
+                        message.error('Error al guardar los tratamientos', err);
+                    }
+                }}
+            >
+                <Form
+                    form={tratamientoForm}
+                    layout="vertical"
+                >
+                    <Form.List
+                        name="tratamientos"
+                        rules={[
+                            {
+                                validator: async (_, trats) => {
+                                    if (!trats || trats.length < 1) {
+                                        return Promise.reject(new Error('Debe haber al menos un tratamiento'));
+                                    }
+                                },
+                            },
+                        ]}
+                    >
+                    {(fields, { add, remove }) => (
+                        <>
+                            {fields.map(({key, name, ...restField }) => (
+                               <Space
+                                    key={key}
+                                    direction="vertical"
+                                    style={{display: 'flex', marginBottom: 16, borderBottom: '1px solid #f0f0f0', paddingBottom: 8}}
+                                >
+                                    <Space wrap style={{display: 'flex'}} align="baseline">
+                                    <Form.Item
+                                        {...restField}
+                                        name={[name, 'tipo']}
+                                        rules={[{ required: true, message: 'Tipo de tratamiento requerido' }]}
+                                    >
+                                        <Select placeholder= "Tipo de tratamiento" style={{ width: 200}}>
+                                            <Option value= "QT">Quimioterapia</Option>
+                                            <Option value= "RT">Radioterapia</Option>
+                                            <Option value= "CX">Cirugía</Option>
+                                            <Option value= "CX + RT">Cirugía + Radioterapia</Option>
+                                            <Option value= "CX + QT">Cirugía + Quimioterapia</Option>
+                                            <Option value= "RT + QT">Radioterapia + Quimioterapia</Option>
+                                        </Select>
+                                    </Form.Item>
+                                    <Form.Item
+                                        {...restField}
+                                        name={[name, 'fecha']}
+                                        rules={[{ required: true, message: 'Fecha requerida' }]}
+                                    >
+                                        <DatePicker placeholder="Selecciona una fecha" />
+                                    </Form.Item>
+
+                                    <Button danger onClick={() => remove(name)}>
+                                        Eliminar
+                                    </Button>
+                                    </Space>
+
+                                    <Form.Item
+                                        {...restField}
+                                        name={[name, 'descripcion']}
+                                        rules={[{ required: true, message: 'Descripción requerida' }]}
+                                    >
+                                        <Input.TextArea placeholder="Descripción" autoSize={{ minRows: 1, maxRows: 6 }} 
+                                        style={{ width: '100%' }}/>
+                                    </Form.Item>
+                                    
+                                </Space>
+                            ))}
+                            <Form.Item>
+                                <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                                    Agregar tratamiento
+                                </Button>
+                            </Form.Item>
+                        </>
+                    )}
+                    </Form.List>
+                </Form>
+
+            </Modal>
+
+                      
     </>
             
     );

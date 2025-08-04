@@ -1,3 +1,24 @@
+/**
+ *  Componente principal de rutas para la aplicación.
+ * Define las rutas públicas y privadas utilizando React Router DOM.
+ * 
+ * Rutas públicas:
+ * - /login: Página de inicio de sesión.
+ * - /privacy: Política de privacidad.
+ * - /terms: Términos y condiciones.
+
+ * Rutas privadas (requieren JWT):
+ * - /: Enrutamiento general con `MainLayout`.
+ *   - /citas: Página principal del calendario.
+ *   - /pacientes: Listado de pacientes.
+ *   - /pacientes/:numExpediente: Detalle de paciente.
+ *   - /usuarios: Gestión de usuarios.
+ *   - /informes/...: Diversas páginas para llenado de formatos médicos.
+ *   - /perfil: Página de perfil del usuario.
+ * 
+ * Cualquier ruta desconocida redirige a /login.
+ */
+
 import React from "react";
 import { Routes,Route, Navigate, BrowserRouter} from 'react-router-dom';
 import LoginPage from './modules/users/pages/LoginPage';
@@ -23,12 +44,23 @@ import SubrogadosPage from "./modules/reports/pages/SubrogadosPage";
 import PrivacyPolicyPage from "./modules/users/pages/PrivacyPolicyPage";
 import TerminosCondicionesPage from "./modules/users/pages/TerminosCondicionesPage";
 
+/**
+ * Ruta privada que verifica si hay un token activo en el contexto de autenticación.
+ * Si no hay token, redirige a /login.
+ *
+ * @param {Object} props
+ * @param {JSX.Element} props.children - Componente hijo que se renderiza si hay sesión activa.
+ * @returns {JSX.Element}
+ */
 function PrivateRoute({children}) {
   const {token} = useAuth();
   return token ? children : <Navigate to= '/login' replace />;
 
 }
 
+/**
+ * Componente principal que define todas las rutas de la aplicación.
+ */
 export default function App() {
   return(
         <Routes>

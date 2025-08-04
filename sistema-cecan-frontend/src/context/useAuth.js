@@ -1,4 +1,10 @@
-
+/**
+ * Hook personalizado `useAuth`:
+ * - Facilita el acceso al contexto de autenticación (`AuthContext`) desde cualquier componente.
+ * - Lanza error si se usa fuera de `AuthContextProvider`.
+ * Returns:
+ * - `{ token, user, login, logout }`
+ */
 import { useContext } from 'react';
 import { AuthContext } from './AuthContext';
 

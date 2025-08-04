@@ -1,3 +1,6 @@
+/**
+ * Página para crear una solicitud de estudio ultrasonográfico.
+ */
 import React, { useState, useEffect } from "react";
 import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space, Select} from "antd";
 import moment from "moment";
@@ -8,6 +11,7 @@ import { fetchCreateReports } from "../../../services/informesApi";
 import { fetchUsers } from "../../../services/userApi";
 import { useLoading } from "../../../hooks/useLoading";
 import ReportsPdfViewer from "../../../components/ReportsPdfViewer";
+import { fetchAllDiagnosticos } from "../../../services/enumsApi";
 
 const { Title, Text} = Typography;
 const { TextArea} = Input;
@@ -22,11 +26,17 @@ export default function SolicitudUltrasonograficoPage(){
         paciente: false,
         payload: false,
         medicos: false,
-    }); 
+        diagnosticos: false,
+    });
+    const [diagnosticos, setDiagnosticos] = useState([]);
 
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
+    /**
+ * useEffect que se ejecuta al montar el componente.
+ * Enfoca automáticamente el input del número de expediente.
+ */
     useEffect(() => {
     dispatchLoading({ type: "SET", key: "medicos", value: true });
     fetchUsers()
@@ -37,8 +47,21 @@ export default function SolicitudUltrasonograficoPage(){
       .finally(() =>
         dispatchLoading({ type: "SET", key: "medicos", value: false })
       );
+    dispatchLoading({ type: "SET", key: "diagnosticos", value: true });  
+    fetchAllDiagnosticos()
+      .then(({data}) => setDiagnosticos(data))
+      .catch(() => message.warning("No se pudo cargar la lista de diagnósticos"))
+      .finally(() =>
+            dispatchLoading({ type: "SET", key: "diagnosticos", value: false })
+        );
+
   }, [dispatchLoading]);
 
+   /**
+     * Carga la información del usuario de acuerdo al tipo de rango.
+     * 
+     * @param {Object} e - Evento del input.
+     */
   const handleNumExpBlur = ({ target: { value } }) => {
     if (!value) return;
     dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -58,6 +81,12 @@ export default function SolicitudUltrasonograficoPage(){
       );
   };
 
+  /**
+     * Envia el formulario a la API para crear la solicitud ultrasonográfica.
+     * Muestra notificaciones y genera visor PDF.
+     * 
+     * @param {Object} values - Valores del formulario.
+     */
   const onFinish = async (values) => {
     dispatchLoading({ type: "SET", key: "payload", value: true });
         try{
@@ -180,14 +209,12 @@ export default function SolicitudUltrasonograficoPage(){
                                 optionFilterProp="children"
                                 style={{ width: "100%" }}
                                 filterOption={(input, option) =>
-                                    option.children
-                                    .toLowerCase()
-                                    .includes(input.toLowerCase())
+                                    (option?.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                                 }
                                 >
                                     {medicos.map((m) => (
                                         <Select.Option key={m.cedula} value={m.cedula}>
-                                        {m.nombre} {m.apellidoPaterno} ({m.cedula})
+                                        {`${m.nombre} ${m.apellidoPaterno} ${m.apellidoMaterno || ""} (${m.cedula})`}
                                         </Select.Option>
                                     ))}
                                 </Select>  
@@ -235,7 +262,22 @@ export default function SolicitudUltrasonograficoPage(){
                         label="Diagnóstico presuntivo"
                         rules={[{ required: true, message: "Ingresa el diagnóstico" }]}
                     >
-                        <TextArea rows={3} />
+                        <Select
+                            showSearch
+                            placeholder="Selecciona un diagnóstico"
+                            loading={diagnosticos.length===0}
+                            optionFilterProp='children'
+                            filterOption={(input, option) =>
+                                option?.children?.toLowerCase().includes(input.toLowerCase())
+    
+                            }
+                        >
+                            {diagnosticos.map(d => (
+                                <Select.Option key={d} value={d}>
+                                    {d}
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </Form.Item>
 
                     <Form.Item

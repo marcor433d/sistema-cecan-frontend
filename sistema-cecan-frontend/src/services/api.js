@@ -1,3 +1,9 @@
+/**
+ * Cliente Axios central configurado para manejar peticiones HTTP al backend.
+ * - Inyecta automáticamente el token JWT en los headers (excepto en /login).
+ * - Muestra mensajes de error amigables según el código de error HTTP o de negocio.
+ * - Incluye manejo para errores de validación, red y sesión.
+ */
 import { message } from 'antd';
 import axios from 'axios';
 
@@ -6,7 +12,12 @@ const api = axios.create({
     baseURL: 'http://localhost:8080/api',
     withCredentials:true,
 });
-//Intwerceptor para inyectar el JWT en cada petición
+
+// Interceptor para agregar el token JWT en cada solicitud, excepto /login.
+/**
+ * Inyecta el token JWT en el encabezado Authorization de cada solicitud si existe.
+ * Evita agregarlo en peticiones al endpoint /login.
+ */
 api.interceptors.request.use(config =>{
     const token = localStorage.getItem('token');
     console.log('[api.interceptor] » URL:',config.url, '- token:',token);
@@ -23,6 +34,12 @@ api.interceptors.request.use(config =>{
     return config;
 }, error => Promise.reject(error));
 
+// Interceptor para manejo global de respuestas
+/**
+ * Maneja errores de red y respuestas del servidor.
+ * Muestra mensajes al usuario según el tipo de error (401, 404, 429, VALIDATION_ERROR, etc).
+ * Rechaza la promesa con información del error para que los componentes puedan manejarla.
+ */
 api.interceptors.response.use(
     response => response,
     error => {

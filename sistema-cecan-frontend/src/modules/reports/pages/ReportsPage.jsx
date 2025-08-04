@@ -13,6 +13,14 @@ const { Title } = Typography;
 export default function ReportsPage(){
         const navigate = useNavigate();
 
+        /**
+         * Arreglo de tipos de informes disponibles.
+         * Cada objeto contiene:
+         * - `key`: identificador único del informe.
+         * - `label`: nombre visible en la tarjeta.
+         * - `icon`: ícono representativo.
+         * - `route`: ruta a la cual se navega al dar click.
+         */
         const tipoDeInforme = [
             {
                 key: "ESTUDIO_SOCIOECONOMICO",

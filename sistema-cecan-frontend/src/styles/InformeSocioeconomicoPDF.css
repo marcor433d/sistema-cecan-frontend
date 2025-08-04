@@ -1,3 +1,12 @@
+/**
+ * Estilos para el informe PDF del estudio socioeconómico.
+ * 
+ * - Define tipografía, tamaños y colores compatibles con impresión.
+ * - `.pagina`: controla saltos de página y márgenes para formato A4.
+ * - `.tabla-integrantes`: define tabla con bordes visibles y estilo uniforme.
+ * - `.firma-section`: secciones de firmas con alineación precisa.
+ * - `.invisible`: texto invisible para mantener altura sin contenido visible.
+ */
 .informe-pdf-container,
 .informe-pdf-container * {
   font-family: Arial, sans-serif !important;

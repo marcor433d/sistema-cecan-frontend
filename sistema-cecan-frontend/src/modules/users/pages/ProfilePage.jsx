@@ -1,3 +1,21 @@
+/**
+ * Componente que muestra el perfil del usuario actual, permite cambiar su contraseña
+ * y, si tiene un rol relacionado con atención clínica, consultar sus citas.
+ * 
+ * Funcionalidades:
+ * - Mostrar datos personales del usuario autenticado.
+ * - Formulario para cambio de contraseña.
+ * - Visualización filtrada de citas por fecha y estado para roles médicos.
+ * 
+ * Usa servicios:
+ * - fetchUserProfile: para obtener datos del usuario.
+ * - changePassword: para cambiar la contraseña del usuario.
+ * - fetchMeAppointments: para cargar citas del usuario si su rol lo permite.
+ * 
+ * Requiere autenticación activa y rol válido.
+ * 
+ * @component
+ */
 import React,{useEffect,useState} from 'react';
 import { changePassword, fetchUserProfile } from '../../../services/userApi';
 import {  fetchMeAppointments} from '../../../services/appointmentsApi';
@@ -12,6 +30,7 @@ const {Panel} = Collapse;
 const ROLES_CON_CITAS = ['MEDICO', 'NUTRICION', 'PSICOLOGIA'];
 const{RangePicker} = DatePicker;
 const{TabPane} = Tabs;
+
 
 export default function ProfilePage() {
     
@@ -30,7 +49,16 @@ export default function ProfilePage() {
     const [dateRange, setDateRange] = useState([dayjs(), dayjs()]);
     const [activeEstado, setActiveEstado] = useState('ALL');
 
-    //Carga el perfil
+    /**
+     * Efecto que se ejecuta al montar el componente para obtener
+     * el perfil del usuario autenticado desde el backend.
+     * 
+     * Actualiza los estados:
+     * - `user` con los datos obtenidos.
+     * - `loadingUser` y `errorUser` según el resultado.
+     * 
+     * Dependencias: []
+     */
     useEffect(() => {
         (async () => {
             try{
@@ -45,7 +73,17 @@ export default function ProfilePage() {
         })();
     },[]);
 
-    //Si el rol está en ROLES_CON_CITAS, cargo sus citas
+    /**
+     * Efecto que se ejecuta cuando se ha cargado el perfil del usuario,
+     * y si su rol está dentro de los permitidos (`MEDICO`, `NUTRICION`, `PSICOLOGIA`),
+     * se cargan sus citas con base en su cédula profesional.
+     * 
+     * Actualiza los estados:
+     * - `citas` con los resultados del backend.
+     * - `loadingCitas` y `errorCitas` según el resultado.
+     * 
+     * Dependencias: [user]
+     */
     useEffect(() => {
         if(!user || !ROLES_CON_CITAS.includes(user.rol)) return;
         setLoadingCitas(true);
@@ -58,7 +96,12 @@ export default function ProfilePage() {
 
     },[user]);
 
-    // prefiltrado por rango y estado:
+  /**
+     * Citas filtradas por estado y rango de fechas seleccionados.
+     * Si el estado es 'ALL', se muestran todas las citas.
+     * 
+     * @type {Array<Object>}
+     */
   const mostradas = activeEstado === 'ALL'
     ? citas
     : citas
@@ -70,7 +113,16 @@ export default function ProfilePage() {
 
     if(errorUser) return <Alert type="error" message="Error al cargar perfil"/>;
 
-    //cambio de contraseña enviar formulario
+     /**
+     * Envía el formulario para cambiar la contraseña del usuario.
+     * 
+     * @async
+     * @function
+     * @param {Object} values - Objeto con las contraseñas.
+     * @param {string} values.oldPassword - Contraseña actual.
+     * @param {string} values.newPassword - Nueva contraseña.
+     * @returns {Promise<void>}
+     */
     const onFinishChangePw = async ({oldPassword, newPassword}) => {
         setPwSubmitting(true);
         try {

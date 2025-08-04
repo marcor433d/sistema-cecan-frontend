@@ -1,3 +1,7 @@
+/**
+ * Página para registrar indicaciones de quimioterapia.
+ * Permite cargar y guardar tratamientos para un paciente.
+ */
 import React, { useState, useEffect } from "react";
 import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space, Select, Modal} from "antd";
 import moment from "moment";
@@ -26,6 +30,9 @@ export default function IndicacionesQuimioPage(){
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
+    /**
+   * Carga los médicos autorizados al montar el componente.
+   */
     useEffect(() => {
     dispatchLoading({ type: "SET", key: "medicos", value: true });
         fetchUsers()
@@ -38,6 +45,10 @@ export default function IndicacionesQuimioPage(){
         );
     }, [dispatchLoading]);
 
+     /**
+   * Busca datos del paciente y posibles datos previos al salir del input.
+   * @param {Object} e - Evento onBlur del input
+   */
     const handleNumExpBlur = ({ target: { value } }) => {
         if (!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -74,6 +85,11 @@ export default function IndicacionesQuimioPage(){
         );
     };
 
+     /**
+   * Envía el formulario con las indicaciones de quimioterapia.
+   * Guarda los datos y abre el visor PDF del reporte generado.
+   * @param {Object} values - Valores del formulario
+   */
     const onFinish = async (values) => {
         dispatchLoading({ type: "SET", key: "payload", value: true });
         try{

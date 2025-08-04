@@ -1,3 +1,6 @@
+/**
+ * Página para registrar un informe de subrogados.
+ */
 import React, { useEffect, useState } from 'react';
 import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space, Select, } from 'antd';
 import moment from 'moment';
@@ -8,6 +11,7 @@ import { fetchUsers } from "../../../services/userApi";
 import { fetchCreateReports } from "../../../services/informesApi";
 import { useLoading } from "../../../hooks/useLoading";
 import ReportsPdfViewer from "../../../components/ReportsPdfViewer";
+import { fetchAllDiagnosticos } from '../../../services/enumsApi';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -21,26 +25,48 @@ export default function SubrogadosPage() {
         paciente: false,
         medicos: false,
         payload: false,
+        diagnosticos: false,
     });
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
+    const [diagnosticos, setDiagnosticos] = useState([]);
+
+    /**
+     * useEffect que se ejecuta la montar el componente para cargar la lista de médicos
+    * */
     useEffect(() => {
     dispatchLoading({ type: "SET", key: "medicos", value: true });
+    dispatchLoading({ type: "SET", key: "diagnosticos", value: true });
     fetchUsers()
       .then(({ data }) => setMedicos(data.filter((u) => u.rol === "MEDICO")))
       .catch(() => message.warning("No se pudo cargar la lista de médicos"))
       .finally(() =>
         dispatchLoading({ type: "SET", key: "medicos", value: false })
       );
+    fetchAllDiagnosticos()
+      .then(({ data }) => setDiagnosticos(data))
+      .catch(() => message.warning("No se pudo cargar la lista de diagnósticos"))
+      .finally(() =>
+        dispatchLoading({ type: "SET", key: "diagnosticos", value: false })
+      );
   }, [dispatchLoading]);
 
+  /**
+     * Carga la información del paciente cuando se ingresa su número de expediente.
+     * 
+     * @param {Object} e - Evento del input.
+     */
   const handleNumExpBlur = ({ target: { value } }) => {
     if (!value) return;
     dispatchLoading({ type: "SET", key: "paciente", value: true });
     fetchPatientsByNumExp(value)
       .then(({ data }) => {
         setPaciente(data);
+        form.setFieldsValue({
+            diagnosticoPresuncion: data?.diagnostico || '' 
+        });
+
       })
       .catch(() => {
         message.warning("Paciente no encontrado");
@@ -51,6 +77,12 @@ export default function SubrogadosPage() {
       );
   };
 
+  /**
+     * Envia los datos del formulario a la API para generar el informe.
+     * Abre el visor PDF en caso de éxito.
+     * 
+     * @param {Object} values - Datos del formulario.
+     */
   const onFinish = async (values) => {
     dispatchLoading({ type: "SET", key: "payload", value: true });
     try{
@@ -162,7 +194,23 @@ export default function SubrogadosPage() {
                     label="Diagnóstico de presunción"
                     rules={[{ required: true, message: "Ingresa el diagnóstico de presunción"}]}
                 >
-                    <Input.TextArea rows={3} />
+                    <Select
+                        showSearch
+                        placeholder="Selecciona un diagnóstico"
+                        loading={diagnosticos.length===0}
+                        optionFilterProp='children'
+                        filterOption={(input, option) =>
+                            option?.children?.toLowerCase().includes(input.toLowerCase())
+
+                        }
+                    >
+                        {diagnosticos.map(d => (
+                            <Select.Option key={d} value={d}>
+                                {d}
+                            </Select.Option>
+                        ))}
+                    </Select>
+
                 </Form.Item>
                 <Form.Item
                     name="medicoSolicitante"
@@ -174,13 +222,13 @@ export default function SubrogadosPage() {
                         placeholder="Selecciona médico..."
                         loading={loading.medicos}
                         optionFilterProp="children"
-                        filterOption={(inp, opt) =>
-                            opt.children.toLowerCase().includes(inp.toLowerCase())
+                        filterOption={(input, option) =>
+                        (option?.children?.toString() || "").toLowerCase().includes(input.toLowerCase())
                         }
                     >
                         {medicos.map((m) => (
                             <Option key={m.cedula} value={m.cedula}>
-                            {m.nombre} {m.apellidoPaterno}
+                            {`${m.nombre} ${m.apellidoPaterno} ${m.apellidoMaterno || ""} (${m.cedula})`}
                             </Option>
                         ))}
                     </Select>

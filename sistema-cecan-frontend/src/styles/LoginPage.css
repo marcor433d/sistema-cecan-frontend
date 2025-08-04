@@ -1,4 +1,11 @@
-
+/**
+ * Estilos para la página de inicio de sesión (LoginPage).
+ * 
+ * - `.login-wrapper`: contenedor centrado vertical y horizontalmente, cubre toda la pantalla.
+ * - `::before`: fondo con imagen desenfocada (blur) a pantalla completa.
+ * - `::after`: capa oscura semitransparente como overlay.
+ * - `.ant-card`: asegura que el formulario (Ant Design Card) esté sobre las capas de fondo.
+ */
 .login-wrapper {
   position: relative;
   height: 100vh;

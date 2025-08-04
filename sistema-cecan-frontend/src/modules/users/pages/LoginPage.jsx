@@ -1,3 +1,9 @@
+/**
+ * Página de inicio de sesión.
+ * Permite al usuario autenticarse mediante su cédula y contraseña,
+ * consumiendo el endpoint de login del backend. Si la autenticación es exitosa,
+ * el usuario es redirigido a la vista de citas.
+ */
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {Form,Input, Button, message, Card} from 'antd';
@@ -6,13 +12,22 @@ import { useAuth } from "../../../context/useAuth";
 import '../../../styles/LoginPage.css';
 import { getLoginErrorMessage } from "../../../utils/errorHandler";
 
-
+/**
+ * Componente funcional para la página de login.
+ * Utiliza Ant Design para el formulario y react-router para la navegación.
+ */
 export default function LoginPage() {
     const [form] = Form.useForm();
     const navigate = useNavigate();
-    const {login} = useAuth();
+    const {login} = useAuth(); // contexto de autenticación
     const[loading, setLoading] = React.useState(false);
 
+    /**
+   * Manejador del envío del formulario.
+   * @param {Object} values - Valores del formulario.
+   * @param {string} values.cedula - Cédula profesional del usuario.
+   * @param {string} values.password - Contraseña del usuario.
+   */
     const onFinish = async ({cedula, password}) =>{
         setLoading(true);
         try{

@@ -1,3 +1,10 @@
+/**
+ * Componente principal del calendario de citas.
+ * Administra la creación, edición y eliminación de eventos,
+ * así como festivos y ausencias.
+ *
+ * @component
+ */
 import React,{ useRef, useState, useCallback, useEffect, useContext} from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -34,9 +41,10 @@ const EVENT_COLORS = {
         ULTRASONIDO:                    '#20c997',
         CUIDADOS_PALIATIVOS:            '#fd7e14',
         MASTOGRAFIA_MATUTINA:           '#6f42c1',
-        VALORACIONES_PRE_ANESTESICAS:   '#343a40',
         FESTIVO:                        '#dc3545',
         AUSENCIA:                       '#fd7e14',
+        VALORACIONES_DE_MEDICINA_INTERNA:'#343a40' ,
+        VALORACIONES_DE_ANESTESICAS: '#063705ff',
 };
 
 
@@ -111,7 +119,11 @@ export default function CalendarPage(){
     const [festivoError,setFestivoError] = useState(null);
     const [ausenciaError, setAusenciaError] = useState(null);
 
-    //Mapeo de eventos
+    /**
+     * Convierte un objeto de cita en el formato que FullCalendar espera.
+     * @param {Object} ev - Evento original desde backend.
+     * @returns {Object} Evento compatible con FullCalendar.
+     */
     const mapToFCEvent = useCallback(ev => {
         const color = EVENT_COLORS[ev.tipo] || '#3788d8'; // fallback
         return {
@@ -135,7 +147,9 @@ export default function CalendarPage(){
         };
     }, []);
 
-    //Función de carga inicial de opciones de tipo de cita y médicos
+    /**
+     * Carga las opciones de tipo de cita y lista de médicos para el formulario.
+     */
     const loadFormOptions = useCallback(async () => {
         try {
             const [tipoRes, usersRes] = await Promise.all([
@@ -148,7 +162,9 @@ export default function CalendarPage(){
             message.error('Error cargando opciones: ' + (err.response?.data || err.message));
         }
     }, [])
-    //Load  para cargar opciones al principio
+    /**
+     * Carga los estados de cita y las opciones del formulario al montar el componente.
+     */
     useEffect(() => {
         fetchEstadoCitas()
             .then((res) => setEstadoOptions(res.data))
@@ -157,7 +173,9 @@ export default function CalendarPage(){
         loadFormOptions();
     },[loadFormOptions]);
 
-    //efecto que aplica todo los filtros sobre fullEvents
+    /**
+     * Aplica los filtros seleccionados (medico, tipo, estado, paciente) sobre todos los eventos.
+     */
     useEffect(() => {
         let f = fullEvents;
         if(filterField && filterValue != null){
@@ -185,7 +203,10 @@ export default function CalendarPage(){
 
     }, [fullEvents, filterField,filterValue]);
 
-    //Carga inicial de citas
+    /**
+     * Maneja la carga de citas en el calendario según el rango visible.
+     * @param {Object} range - Contiene `startStr` y `endStr` del calendario.
+     */
     const handleDatesSet = useCallback(async({startStr, endStr}) => {
         if(lastRange.current.start === startStr && lastRange.current.end === endStr ) {
             return;
@@ -207,6 +228,9 @@ export default function CalendarPage(){
         }
     }, [medicoFilter, mapToFCEvent, setLoading]);
 
+    /**
+     * Abre el modal para crear nueva cita.
+     */
     const openModal = () => {
         setModalVisible(true);
         setAppointmentError(null);
@@ -214,7 +238,10 @@ export default function CalendarPage(){
        
     };
 
-    //Manejador para crear citas
+    /**
+     * Envía una nueva cita al backend y la agrega al calendario.
+     * @param {Object} values - Datos del formulario de cita.
+     */
     const handleCreate = async (values) => {
         setLoading({type: 'SET', key: 'appointment', value: true});
 
@@ -270,7 +297,9 @@ export default function CalendarPage(){
             }
     };
 
-    //Manejador para borrar citas
+    /**
+     * Elimina una cita seleccionada del backend y del calendario.
+     */
     const handleDelete = async () => {
         try {
             await fetchDeleteAppointment(selectedEvent.id);
@@ -284,6 +313,9 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Abre el formulario de edición para una cita existente.
+     */
     const openEdit = () => {
         if(selectedEvent.usuarioCedula){
         handleUserSelect(selectedEvent.usuarioCedula);
@@ -313,6 +345,10 @@ export default function CalendarPage(){
         setEditVisible(true);
     };
 
+    /**
+     * Actualiza una cita existente en el backend y en el calendario.
+     * @param {Object} values - Datos del formulario editado.
+     */
     const handleEdit = async values => {
         setLoading({type: 'SET', key: 'update', value: true});
         setAppointmentError(null);
@@ -366,11 +402,18 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Abre el formulario para cambiar el estado de la cita.
+     */
     const openStatus = () => {
         statusForm.setFieldsValue({ estado: selectedEvent.estado});
         setStatusVisible(true);
     };
     
+    /**
+     * Cambia el estado de una cita en el backend.
+     * @param {Object} values - Contiene el nuevo estado.
+     */
     const handleStatus = async values => {
         try {
             const { data: resp } = await fetchUpdateAppointmentStatus(selectedEvent.id, values.estado);
@@ -405,7 +448,10 @@ export default function CalendarPage(){
         }
     };*/
 
-    //Manejadores para festivos
+    /**
+     * Crea un nuevo día festivo.
+     * @param {Object} vals - Datos del formulario de festivo.
+     */
     const handleCreateFestivo = async (vals) => {
         setLoading({type: 'SET', key: 'festivo', value: true});
         try{
@@ -425,6 +471,9 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Abre el formulario de edición de día festivo.
+     */
     const openFestivoEdit = () => {
         festivoForm.setFieldsValue({
             fecha: moment(selectedFestivo.fecha),
@@ -434,6 +483,10 @@ export default function CalendarPage(){
         setFestivoEditVisible(true);
     };
 
+    /**
+     * Actualiza un día festivo.
+     * @param {Object} vals - Datos editados del formulario.
+     */
     const handleUpdateFestivo = async vals => {
         try {
             await fetchUpdateFestivos(selectedFestivo.id, {
@@ -451,6 +504,9 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Elimina un día festivo.
+     */
     const handleDeleteFestivo = async () => {
         try{
             await fetchDeleteFestivos(selectedFestivo.id);
@@ -462,7 +518,10 @@ export default function CalendarPage(){
         }
     };
 
-    //Manejadores para Ausencias
+    /**
+     * Crea una nueva ausencia para un médico.
+     * @param {Object} vals - Datos del formulario de ausencia.
+     */
     const handleCreateAusencia = async (vals) => {
         setLoading({type: 'SET', key: 'ausencia', value: true});
         try{
@@ -483,6 +542,9 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Abre el formulario para editar una ausencia.
+     */
     const openAusenciaEdit = () => {
         ausenciaForm.setFieldsValue({
             usuarioCedula: selectedAusencia.usuarioCedula,
@@ -494,6 +556,10 @@ export default function CalendarPage(){
         setAusenciaEditVisible(true);
     };
 
+    /**
+     * Actualiza una ausencia existente.
+     * @param {Object} vals - Datos editados del formulario.
+     */
     const handleUpdateAusencia = async vals => {
         try {
             await fetchUpdateAusencias(selectedAusencia.id, {
@@ -511,6 +577,9 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Elimina una ausencia.
+     */
     const handleDeleteAusencia = async () => {
         try {
             await fetchDeleteAusencias(selectedAusencia.id);
@@ -522,6 +591,10 @@ export default function CalendarPage(){
         }
     };
 
+    /**
+     * Carga y muestra las ausencias de un médico seleccionado.
+     * @param {string} cedula - Cédula profesional del médico.
+     */
    const handleUserSelect = async (cedula) => {
     try{ 
     const ausencias = await fetchUserAusencias(cedula);

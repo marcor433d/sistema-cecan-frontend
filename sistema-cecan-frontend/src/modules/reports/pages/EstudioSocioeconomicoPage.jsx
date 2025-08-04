@@ -1,3 +1,8 @@
+/**
+ * Clase para crear un informe de estudio socioeconomico
+ * Esta clase sirve para dar de alta al paciente
+ */
+
 import React, {useEffect, useState, useRef} from "react";
 import { Typography, Form, Input, InputNumber, Button, message, Row, Col, DatePicker, Select, Switch, Divider, Card,
  } from "antd";
@@ -24,6 +29,10 @@ export default function EstudioSocioeconomicoPage(){
     const [detalleGuardado, setDetalleGuardado] = useState(null);
     const pdfRef = useRef();
 
+    /**
+     * Hook que se ejecuta al montar el componente.
+     * Establece valores por defecto y carga catálogos de derechohabiencia y enfermedades.
+     */
     useEffect(() => {
         form.setFieldsValue({
             usuarioCedula: user?.cedula || "",
@@ -58,6 +67,10 @@ export default function EstudioSocioeconomicoPage(){
             })
     }, [form, user, dispatchLoading]);
 
+    /**
+     * Función para procesar y enviar los datos del formulario al backend.
+     * @param {Object} values - Datos capturados por el formulario.
+     */
     const onFinish = async (values) => {
         try {
             //Procesar "direcciones" (permanente y provisional)
@@ -260,6 +273,10 @@ export default function EstudioSocioeconomicoPage(){
         }
         };
 
+        /**
+         * Genera un archivo PDF a partir del componente visual del informe.
+         * Utiliza html2canvas + jsPDF.
+         */
         const handleGenerarPDF = async () => {
             if (!detalleGuardado) {
                 message.warning("Primero guarda el informe para generar el PDF.");

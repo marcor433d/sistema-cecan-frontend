@@ -1,3 +1,11 @@
+/**
+ * Estilos para la página de Política de Privacidad.
+ * 
+ * - `.privacy-wrapper`: layout responsivo con fondo gris y contenido centrado.
+ * - `.ant-layout-content`: tarjeta blanca con padding, sombra y bordes redondeados.
+ * - Manejo de listas, párrafos y encabezados con márgenes estándar.
+ * - Enlaces azules con efecto hover.
+ */
 .privacy-wrapper {
   background: #f0f2f5;
   min-height: 100vh;

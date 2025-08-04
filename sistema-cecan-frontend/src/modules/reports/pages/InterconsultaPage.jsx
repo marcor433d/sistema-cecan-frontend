@@ -1,5 +1,8 @@
-import React, { useState} from "react";
-import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space } from "antd";
+/**
+ * Página para la creación del informe de Interconsulta.
+ */
+import React, { useEffect, useState} from "react";
+import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space, Select} from "antd";
 import moment from "moment";
 import { EyeOutlined } from "@ant-design/icons";
 import { useAuth } from "../../../context/useAuth";
@@ -7,7 +10,7 @@ import { fetchPatientsByNumExp } from "../../../services/patientsApi";
 import { fetchCreateReports } from "../../../services/informesApi";
 import { useLoading } from "../../../hooks/useLoading";
 import ReportsPdfViewer from "../../../components/ReportsPdfViewer";
-
+import { fetchAllDiagnosticos } from "../../../services/enumsApi";
 const { Title, Text} = Typography;
 const { TextArea } = Input;
 
@@ -18,24 +21,56 @@ export default function InterconsultaPage(){
     const [loading, dispatchLoading] = useLoading({
         paciente: false,
         payload: false,
+        diagnosticos: false,
     });
 
     const[drawerOpen, setDrawerOpen] = useState(false);
     const[currentReport, setCurrentReport] = useState(null);
+    const [diagnosticos, setDiagnosticos] = useState([]);
 
+    /**
+     * Evento que se dispara cuando el usuario pierde el foco del input de expediente.
+     * Busca automáticamente al paciente por número de expediente.
+     *
+     * @param {Object} e - Evento blur del input.
+     */
     const handleNumExpBlur = ({target: {value}}) => {
         if(!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
         fetchPatientsByNumExp(value)
-            .then(({data}) => setPaciente(data))
+            .then(({data}) => {
+            setPaciente(data);
+            form.setFieldsValue({
+            diagnostico: data?.diagnostico || '' 
+        });
+    })
             .catch(() => {
                 message.warning("No se pudo cargar el paciente");
                 setPaciente(null);
             })
             .finally(()=>
                 dispatchLoading({ type: "SET", key: "paciente", value: false }));
+        
     };
 
+    useEffect(()=>{
+        dispatchLoading({ type: "SET", key: "diagnosticos", value: true });
+            fetchAllDiagnosticos()
+                .then(({data}) => setDiagnosticos(data))
+                .catch(() => {
+                    message.warning("No cargaron los diagnósticos");
+                    setDiagnosticos(null);
+                })
+                .finally(() =>
+                dispatchLoading({ type: "SET", key: "diagnosticos", value: false}));
+    },[dispatchLoading])
+
+    /**
+     * Evento que se ejecuta al enviar el formulario de Interconsulta.
+     * Envía los datos al backend, genera el informe y muestra el PDF.
+     *
+     * @param {Object} values - Valores del formulario completado.
+     */
     const onFinish = async (values) => {
        dispatchLoading({ type: "SET", key: "payload", value: true });
        try{
@@ -113,7 +148,7 @@ export default function InterconsultaPage(){
                             <br />
                             <Text>
                                 <b>Edad: </b>
-                                {paciente.edadCumplida} años
+                                {paciente.edadCumplida} años{" "}
                             </Text>
                             <Text>
                                 <b>Sexo: </b>
@@ -156,7 +191,22 @@ export default function InterconsultaPage(){
                         label="Diagnóstico de presunción"
                         rules={[{required: true, message: "Ingresa el diagnóstico"}]}
                     >
-                        <TextArea rows={3} />
+                        <Select
+                        showSearch
+                        placeholder="Selecciona un diagnóstico"
+                        loading={diagnosticos.length===0}
+                        optionFilterProp='children'
+                        filterOption={(input, option) =>
+                            option?.children?.toLowerCase().includes(input.toLowerCase())
+
+                        }
+                        >
+                            {diagnosticos.map(d => (
+                                <Select.Option key={d} value={d}>
+                                    {d}
+                                </Select.Option>
+                            ))}
+                        </Select>
                     </Form.Item>
                     <Form.Item
                         name="motivoEnvio"

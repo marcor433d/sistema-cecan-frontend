@@ -1,3 +1,6 @@
+/**
+ * Componente para la creación del informe de Solicitud de Transfusión.
+ */
 import React, { useState, useEffect } from "react";
 import { Typography, Form, Input, Button, DatePicker, TimePicker, InputNumber, message, Card, Divider, Row, Col, Drawer, Space, Select, Modal, Checkbox } from "antd";
 import moment from "moment";
@@ -36,7 +39,10 @@ export default function SolicitudTransfusion() {
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
-    // cargar lista de médicos
+    /**
+     * useEffect que se ejecuta al cargar el componente.
+     * Carga la lista de médicos
+     */
     useEffect(() => {
         dispatchLoading({ type: "SET", key: "medicos", value: true });
         fetchUsers()
@@ -49,6 +55,12 @@ export default function SolicitudTransfusion() {
         );
     }, [dispatchLoading]);
 
+    /**
+     * Maneja la carga del paciente al escribir el número de expediente.
+     * Si el paciente tiene grupo sanguíneo, lo establece por defecto en el formulario.
+     * 
+     * @param {Object} e - Evento del input.
+     */
      const handleNumExpBlur = ({ target: { value } }) => {
         if (!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -56,7 +68,8 @@ export default function SolicitudTransfusion() {
             .then(({ data }) => {
                 setPaciente(data);
                 //prerellenar grupo sanguíneo si ya existe
-                form.setFieldsValue({grupoSanguineo: data.grupoSanguineo || undefined});
+                form.setFieldsValue({grupoSanguineo: data.grupoSanguineo || undefined
+                });
             })
             .catch(() => {
                 message.warning("No se pudo cargar el paciente");
@@ -67,7 +80,11 @@ export default function SolicitudTransfusion() {
             );
      };
 
-     
+    /**
+     * Limita la selección de productos solicitados a un máximo de 5.
+     * 
+     * @param {Array} values - Lista de productos seleccionados.
+     */
      const handleProductChange = (values) => {
         if(values.length > 5) {
             message.warning("Sólo puedes seleccionar hasta 5 productos");
@@ -76,6 +93,12 @@ export default function SolicitudTransfusion() {
         form.setFieldsValue({productoSolicitado: values});
      };
 
+    /**
+     * Envia el formulario a la API para crear la solicitud de transfusión.
+     * También muestra un mensaje de éxito o error y abre el visor PDF.
+     * 
+     * @param {Object} values - Valores del formulario.
+     */
      const onFinish = async (values) => {
         dispatchLoading({ type: "SET", key: "payload", value: true });
         try{
@@ -176,7 +199,7 @@ export default function SolicitudTransfusion() {
                             >
                                 <Input placeholder="Ej: A+, O–, B+, ..." />
                             </Form.Item>
-                            <Text><b>Diagnóstico:</b> {paciente.diagnostico || "—"}</Text>
+                            <Text><b>Diagnóstico:</b> {paciente.diagnostico || "—"}</Text>{/**cambiar aqui */}
                         </Card>
                      )}
                      {/* Detalles de la solicitud */}
@@ -366,12 +389,12 @@ export default function SolicitudTransfusion() {
                                     loading={loading.medicos}
                                     optionFilterProp="children"
                                     filterOption={(inp, opt) =>
-                                        opt.children.toLowerCase().includes(inp.toLowerCase())
+                                        (opt?.children?.toString() || "").toLowerCase().includes(inp.toLowerCase())
                                     }
                                 >
                                     {medicos.map(m => (
                                         <Option key={m.cedula} value={m.cedula}>
-                                        {m.nombre} {m.apellidoPaterno} ({m.cedula})
+                                        {`${m.nombre} ${m.apellidoPaterno} ${m.apellidoMaterno || ""} (${m.cedula})`}
                                         </Option>
                                     ))}
                                 </Select>

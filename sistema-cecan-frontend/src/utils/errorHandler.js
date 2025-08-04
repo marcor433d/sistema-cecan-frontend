@@ -1,6 +1,15 @@
 /**
- * Dado un estatus HTTP y un errorCode de la API,
- * Devuelve el texto que se quieree mostrar al usuario.
+ * Devuelve un mensaje de error legible para el usuario
+ * según el código de estado HTTP (`status`) y el código de error interno (`errorCode`)
+ * proporcionado por la API durante el inicio de sesión.
+ * 
+ * Este manejador traduce errores comunes como credenciales inválidas o fallos de servidor
+ * a mensajes más comprensibles y amigables para mostrar en la interfaz.
+ * 
+ * @param {number} status - Código de estado HTTP (ej. 400, 401, 500).
+ * @param {string} errorCode - Código de error devuelto por el backend (ej. 'INVALID_CREDENTIALS').
+ * @param {string} [defaultMsg] - Mensaje por defecto a mostrar si no hay coincidencias.
+ * @returns {string} Mensaje listo para mostrar al usuario.
  */
 export function getLoginErrorMessage(status, errorCode,defaultMsg) {
     switch (status) {

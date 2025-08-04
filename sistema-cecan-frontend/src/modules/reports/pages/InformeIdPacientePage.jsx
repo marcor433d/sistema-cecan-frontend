@@ -1,3 +1,7 @@
+/**
+ * Página de generación del Informe de Identificación del Paciente.
+ * Recoge y muestra información clínica relevante como peso, talla, grupo sanguíneo y riesgos clínicos.
+ */
 import React, { useState, useEffect } from "react";
 import { Typography, Form, Input, Button, TimePicker, message, Card, Divider, Row, Col, Drawer, Space, Select, InputNumber, Checkbox } from "antd";
 import moment from "moment";
@@ -28,7 +32,9 @@ export default function InformeIdPacientePage() {
     const [riesgoCaida, setRiesgoCaida] = useState(false);
     const [riesgoUlceras, setRiesgoUlceras] = useState(false);
 
-    // cargar lista de médicos/usuarios
+    /**
+     * Al montar el componente, intenta cargar información previa si se recibe el número de expediente por parámetro.
+     */
     useEffect(() => {
         dispatchLoading({ type: "SET", key: "medicos", value: true });
         fetchUsers()
@@ -41,6 +47,12 @@ export default function InformeIdPacientePage() {
         );
     }, [dispatchLoading]);
 
+    /**
+     * Maneja el evento blur del campo de número de expediente.
+     * Busca los datos previos del informe del paciente y, si existen, los carga en el formulario.
+     * 
+     * @param {Object} e - Evento onBlur del input
+     */
     const handleNumExpBlur = ({ target: {value} }) => {
         if(!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -74,16 +86,29 @@ export default function InformeIdPacientePage() {
             );
     };
 
+    /**
+     * Alterna el valor booleano del riesgo de caída.
+     * Actualiza tanto el estado local como el valor del formulario.
+     */
     const toggleCaida = () => {
         setRiesgoCaida(!riesgoCaida);
         form.setFieldsValue({ riesgoCaida: !riesgoCaida });
     };
 
+    /**
+     * Alterna el valor booleano del riesgo de úlceras por presión.
+     * Actualiza tanto el estado local como el valor del formulario.
+     */
     const toggleUlceras = () => {
         setRiesgoUlceras(!riesgoUlceras);
         form.setFieldsValue({ riesgoUlceras: !riesgoUlceras });
     };
 
+    /**
+     * Envía los datos del formulario al backend para registrar o actualizar el informe.
+     * 
+     * @param {Object} values - Valores del formulario ingresados por el usuario.
+     */
     const onFinish = async (values) => {
         dispatchLoading({ type: "SET", key: "payload", value: true });
         try{

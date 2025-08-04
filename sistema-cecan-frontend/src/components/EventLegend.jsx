@@ -1,3 +1,9 @@
+/**
+ * Componente `EventLegend`:
+ * - Muestra una leyenda de tipos de eventos usando etiquetas (Tags) de colores.
+ * Props:
+ * - `colors`: objeto con claves tipo de evento y valores de color (ej. {consulta: 'blue'}).
+ */
 import React from 'react';
 import {Space, Tag, Typography} from 'antd';
 

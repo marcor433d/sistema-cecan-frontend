@@ -1,3 +1,7 @@
+/**
+ * Página de solicitud de estudios de gabinete/laboratorio.
+ * Permite al usuario autorizado generar una solicitud médica vinculada a un paciente.
+ */
 import React, { useState, useEffect } from "react";
 import { Typography, Form, Input, Button, DatePicker, message, Card, Divider, Row, Col, Drawer, Space, Select } from "antd";
 import moment from "moment";
@@ -27,6 +31,9 @@ export default function EstudioGabineteLabPage(){
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
 
+    /**
+     * Carga la lista de médicos con roles permitidos cuando el componente se monta.
+     */
     useEffect(() => {
     dispatchLoading({ type: "SET", key: "medicos", value: true });
     fetchUsers()
@@ -39,6 +46,11 @@ export default function EstudioGabineteLabPage(){
       );
   }, [dispatchLoading]);
 
+   /**
+     * Maneja el blur en el input del expediente. Busca los datos del paciente asociado.
+     * Si se encuentra, se actualiza el estado y se precarga el diagnóstico si existe.
+     * @param {Event} e - Evento onBlur del input
+     */
     const handleNumExpBlur = ({ target: { value } }) => {
         if (!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -59,6 +71,11 @@ export default function EstudioGabineteLabPage(){
         );
     };
 
+    /**
+     * Maneja el envío del formulario. Construye y envía la solicitud al backend.
+     * Si es exitosa, muestra mensaje, limpia formulario y muestra PDF generado.
+     * @param {Object} values - Valores del formulario
+     */
     const onFinish = async (values) =>{
         dispatchLoading({ type: "SET", key: "payload", value: true });
         try{

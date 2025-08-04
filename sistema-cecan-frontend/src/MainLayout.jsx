@@ -1,3 +1,9 @@
+/**
+ * Componente de diseño principal (layout) que envuelve todas las vistas protegidas por autenticación.
+ * Contiene un menú lateral con navegación, encabezado con logo, contenido principal renderizado vía <Outlet />,
+ * e información de usuario y botón para cerrar sesión.
+ *
+ */
 import React from "react";
 import { Layout, Menu, Typography, Divider, Avatar, Button } from "antd";
 import { CalendarOutlined, TeamOutlined, UserOutlined, BarChartOutlined, LogoutOutlined,} from '@ant-design/icons';
@@ -10,6 +16,10 @@ import logo from './styles/logo-cecan.png';
 const {Sider, Header, Content, Footer} = Layout;
 const { Text } = Typography
 
+/**
+ * Rutas disponibles en el menú lateral con su icono, etiqueta y ruta.
+ * Se utiliza en el componente <Menu />.
+ */
 const menuItems = [
     { key: 'citas', icon: <CalendarOutlined/>, label: 'Citas', path: '/citas'},
     { key: 'pacientes', icon: <TeamOutlined/>, label: 'Pacientes', path: '/pacientes'},
@@ -17,28 +27,47 @@ const menuItems = [
     { key: 'informes', icon: <BarChartOutlined/>, label: 'Informes', path:'/informes'},
 ];
 
+/**
+ * Ruta protegida que requiere autenticación. Si no hay token, redirige al login.
+ *
+ * @param {Object} props
+ * @param {JSX.Element} props.children - Contenido a mostrar si el usuario está autenticado.
+ * @returns {JSX.Element}
+ */
 function PrivateRoute({children}) {
     const {token} = useAuth();
     return token ? children : <Navigate to="/login" replace />;
 }
 
+/**
+ * Componente principal del layout de la aplicación.
+ * Muestra la barra lateral con navegación, datos del usuario y permite cerrar sesión.
+ * El contenido principal se renderiza dentro del componente <Outlet />.
+ */
 export default function MainLayout() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
     const { user, logout} = useAuth();
 
     console.log('MainLayout render, ruta actual:', pathname);
-    //Manejador para cerrar sesión
+    /**
+     * Cierra sesión y redirige al login.
+     * @param {Event} e - Evento del botón.
+     */
     const handleLogout= (e) =>{
         e.stopPropagation();
         logout(); //limpia el toke y usuario
         navigate('/login');
     };
 
-    //Acción para clickear al avatar
+    /**
+     * Redirige al perfil del usuario al hacer clic sobre el avatar.
+     */
     const onAvatarClick = () => navigate('/perfil');
 
-    //Encuentra la key cuyo path coincide con el inicio de la URL actual
+    /**
+     * Determina qué opción del menú está activa en función de la ruta actual.
+     */
     const selectedKey = menuItems.find(i=> pathname.startsWith(i.path))?.key;
 
 

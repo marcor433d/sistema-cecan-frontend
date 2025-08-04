@@ -1,3 +1,4 @@
+/* Estilos base del body: sin márgenes, color de fondo y texto blanco */
 body {
   margin: 0;
   min-width: 320px;
@@ -6,23 +7,27 @@ body {
   color: #fff;
 }
 
+/* Transición de fondo para botones de usuario */
 .user-info,
 .logout-button {
   transition: background 0.2s !important;
 }
 
+/* Efecto hover con fondo semitransparente blanco */
 .user-info:hover,
 .logout-button:hover {
   background: rgba(255, 255, 255, 0.1) !important;
 }
 
 /*Calendario*/
+/* Reduce el espacio entre eventos */
 .fc .fc-timegrid-event {
   margin-bottom: 4px !important;
   border-radius: 4px;
 
 }
 
+/* Ajusta el padding y tamaño de fuente dentro de los eventos */
 .fc .fc-event-main {
   padding: 2px 4px;
   font-size: 0.85em;

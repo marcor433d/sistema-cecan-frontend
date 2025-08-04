@@ -1,4 +1,7 @@
-import React, {  useState} from "react";
+/**
+ * Página para registrar y generar el informe de Historia Clínica de un paciente.
+ */
+import React, {  useEffect, useState} from "react";
 import { Typography, Form, Input,Button, DatePicker, message, Card, Divider, Spin, Row, Col, Select, Drawer, Space } from "antd";
 import moment from "moment";
 import { PlusOutlined, DownloadOutlined, EyeOutlined } from "@ant-design/icons";
@@ -7,7 +10,7 @@ import { fetchCreateReports} from "../../../services/informesApi";
 import { fetchPatientsByNumExp } from "../../../services/patientsApi";
 import ReportsPdfViewer from "../../../components/ReportsPdfViewer";
 import { useLoading } from "../../../hooks/useLoading";
-
+import { fetchAllDiagnosticos } from "../../../services/enumsApi";
 const { Title, Text} = Typography;
 const { TextArea } = Input;
 
@@ -22,8 +25,13 @@ export default function HistoriaClinicaPage(){
   const[currentReport, setCurrentReport] = useState(null);
   const [loading, dispatchLoading] = useLoading({ paciente: false, payload: false });
 
-  
+  const [diagnosticos, setDiagnosticos] = useState([]);
 
+  /**
+     * Maneja el blur en el input del expediente. Busca los datos del paciente asociado.
+     * Si se encuentra, se actualiza el estado y precargan sus datos si existe.
+     * @param {Event} e - Evento onBlur del input
+     */
     const handleNumExpBlur = ({target: {value}}) => {
         if(!value) return;
         dispatchLoading({ type: "SET", key: "paciente", value: true });
@@ -42,6 +50,7 @@ export default function HistoriaClinicaPage(){
                     municipioNacimiento: data.municipioNacimiento,
                     estadoResidencia: data.estadoResidencia,
                     municipioResidencia: data.municipioResidencia,
+                    diagnosticoSelect: data.diagnostico,
                 });
             })
             .catch(() => {
@@ -53,9 +62,27 @@ export default function HistoriaClinicaPage(){
     };
 
   
-  
+  useEffect(() => {
+    // Cargar diagnósticos al montar el componente
+    dispatchLoading({ type: "SET", key: "payload", value: true });
+    fetchAllDiagnosticos()
+      .then(({ data }) => {
+        setDiagnosticos(data);
+      })
+      .catch(() => {
+        message.error("Error al cargar los diagnósticos");
+      })
+      .finally(() => {
+        dispatchLoading({ type: "SET", key: "payload", value: false });
+      });
+  }, [dispatchLoading]);
 
-  //Armamos el payload y llamamos al backend
+  /**
+   * Envía los datos del formulario para generar un nuevo informe de historia clínica.
+   * Si el envío es exitoso, muestra el informe generado en un visor PDF (Drawer).
+   * 
+   * @param {Object} values - Valores capturados del formulario.
+   */
   const onFinish = async (values) => {
     dispatchLoading({ type: "SET", key: "payload", value: true });
     try {
@@ -271,10 +298,47 @@ export default function HistoriaClinicaPage(){
           <TextArea rows={8} />
         </Form.Item>
         <Form.Item
-          name="diagnosticoTratamiento"
           label="Diagnóstico y tratamiento"
         >
-          <TextArea rows={8} />
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Form.Item name="diagnosticoSelect" noStyle>
+              <Select
+                placeholder="Selecciona un diagnóstico"
+                loading={diagnosticos.length === 0}
+                optionFilterProp="children"
+                style={{ width: '100%' }}
+                onChange={(val) => {
+                  const tratamiento = form.getFieldValue("tratamientoTexto") || "";
+                  const combinado = `${val}\n\n${tratamiento}`;
+                  form.setFieldsValue({ diagnosticoTratamiento: combinado });
+                }}
+                filterOption={(input, option) =>
+                  option?.children?.toLowerCase().includes(input.toLowerCase())
+                }
+              >
+                {diagnosticos.map(d => (
+                  <Select.Option key={d} value={d}>
+                    {d}
+                  </Select.Option>
+                ))}
+              </Select>
+        </Form.Item>
+        <Form.Item name="tratamientoTexto" noStyle>
+          <TextArea
+            rows={6}
+            placeholder="Escribe el tratamiento..."
+            onChange={(e) => {
+              const diagnostico = form.getFieldValue("diagnosticoSelect") || "";
+              const combinado = `${diagnostico}\n\n${e.target.value}`;
+              form.setFieldsValue({ diagnosticoTratamiento: combinado });
+            }}
+          />
+        </Form.Item>
+        {/* Campo oculto que guarda el texto final combinado */}
+        <Form.Item name="diagnosticoTratamiento" hidden>
+          <Input />
+        </Form.Item>
+          </Space>
         </Form.Item>
 
         <Form.Item style={{ textAlign: 'right' }}>

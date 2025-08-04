@@ -1,3 +1,11 @@
+/**
+ * Contexto de autenticación (`AuthContext`):
+ * - Proporciona y gestiona el estado global de autenticación: token, usuario, login, logout.
+ * - Al montar, si hay token pero no usuario, obtiene el perfil automáticamente.
+ * - Guarda/lee datos desde `localStorage`.
+ * Componentes:
+ * - `AuthContextProvider`: Envoltorio que expone `token`, `user`, `login`, `logout` a toda la app.
+ */
 import React, {createContext, useState, useEffect} from 'react';
 import {fetchUserProfile} from '../services/userApi'
 ;
