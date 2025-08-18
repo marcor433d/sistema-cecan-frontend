@@ -63,6 +63,9 @@ api.interceptors.response.use(
                 break;
             case 401:
                 message.error('No estás autorizado. Por favor inicia sesión.');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
                 break;
             case 404:
                 message.error('Recurso no encontrado.');

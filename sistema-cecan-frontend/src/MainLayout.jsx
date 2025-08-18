@@ -144,7 +144,8 @@ export default function MainLayout() {
                 <Footer style={{textAlign: 'center'}}>
                 Centro Estatal de Cancerología del Estado de Durango ©{new Date().getFullYear()} |{' '}
                 <a href="/privacy">Aviso de Privacidad</a> |{' '}
-                <a href="/terms">Términos y Condiciones</a>
+                <a href="/terms">Términos y Condiciones</a> |{' '}
+                <a href="/manual.pdf" download="manual usuario cecan v1.pdf">Manual</a>
                 </Footer>
             </Layout>
         </Layout>

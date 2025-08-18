@@ -119,6 +119,19 @@ export default function CalendarPage(){
     const [festivoError,setFestivoError] = useState(null);
     const [ausenciaError, setAusenciaError] = useState(null);
 
+    //CONSOLE LOG
+    useEffect(() => {
+        console.log('fullEvents', fullEvents);
+    }, [fullEvents]);
+
+    useEffect(() => {
+        console.log('events filtrados:',events);
+    },[events]);
+
+    //manejo de useeffect chequeo de citas
+    const eventsRef = useRef([]);
+    useEffect(() => { eventsRef.current = events; }, [events]);
+
     /**
      * Convierte un objeto de cita en el formato que FullCalendar espera.
      * @param {Object} ev - Evento original desde backend.
@@ -203,6 +216,61 @@ export default function CalendarPage(){
 
     }, [fullEvents, filterField,filterValue]);
 
+    useEffect(() => {
+        const interval = setInterval(async () => {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(),23,59,59);
+
+            const todayEvents = eventsRef.current.filter(ev => {
+                const start = new Date(ev.start);
+                return start >= todayStart && start <= todayEnd;
+            });
+
+
+
+            for(const ev of todayEvents){
+                const start = new Date(ev.start);
+                const end = new Date(ev.end);
+                let nuevoEstado = null;
+
+                if(ev.extendedProps.estado === 'CANCELADA') continue;
+
+
+                if(now > start && now <= end && ev.extendedProps.estado !== 'EN_CURSO'){
+                    nuevoEstado = 'EN_CURSO';
+                } else if(now > end && ev.extendedProps.estado !== 'REALIZADA'){
+                    nuevoEstado = 'REALIZADA';
+                }
+
+                if(nuevoEstado){
+
+                    try{
+                        const {data: resp} = await fetchUpdateAppointmentStatus(ev.id,nuevoEstado);
+                        const updatedEvent = { ...ev, extendedProps: { ...ev.extendedProps, estado: resp.estado } };
+
+                        //Actualizar localmente
+                        setEvents(prev => prev.map(e => e.id === ev.id ? updatedEvent : e));
+
+                        //Actualizar calendario
+                        const fcEvent = calendarRef.current.getApi().getEventById(updatedEvent.id);
+                        if(fcEvent){
+                            fcEvent.setExtendedProp('estado',resp.estado);
+                        }
+
+
+                    }catch(err){
+                        console.warn('Error actualizando estado de cita:', err);
+                    }
+                }else {
+                    console.log(`No se cambia estado de ${ev.id}`);
+                }
+                    
+                }
+        }, 60000);
+        return () => clearInterval(interval);
+    },[]);
+
     /**
      * Maneja la carga de citas en el calendario según el rango visible.
      * @param {Object} range - Contiene `startStr` y `endStr` del calendario.
@@ -217,6 +285,7 @@ export default function CalendarPage(){
         try{
             const {data} = await fetchCalendarEvents(startStr, endStr, medicoFilter);
             setFullEvents(data.map(mapToFCEvent));
+
         } catch(e){
             const backendMsg=
             e.response?.data?.message
@@ -266,27 +335,15 @@ export default function CalendarPage(){
             const {data: resp} = await fetchCreateAppointments(payload);
 
 
-                //Mapeo la respuesta al FullCalendar event
-                const newEvent ={
-                    id: resp.id,
-                    title: resp.title,
-                    start: resp.start,
-                    end:   resp.end,
-                    allDay: resp.allDay,
-                    extendedProps: {
-                        tipo: resp.tipo,
-                        estado: resp.estado,
-                        motivo: resp.motivo,
-                    }
-                };
 
             message.success('Cita agendada correctamente');
-            calendarRef.current.getApi().refetchEvents();
+            
             setModalVisible(false);
             form.resetFields();
             //fuerza un refresco de la vista actual
-            calendarRef.current.getApi().addEvent(newEvent);
-            setEvents(prev => [...prev, newEvent]);
+            setEvents(prev => [...prev, resp]);
+
+
             } catch(e) {
                 const msg = e.response?.data?.message
                     ?? e.response?.data
@@ -352,7 +409,6 @@ export default function CalendarPage(){
     const handleEdit = async values => {
         setLoading({type: 'SET', key: 'update', value: true});
         setAppointmentError(null);
-        try{
             const payload = {
                 tipo: values.tipo,
                 estado: values.estado,
@@ -371,27 +427,38 @@ export default function CalendarPage(){
                         paciente: {numExpediente: values.pacienteExpediente},
                     }),
              };
-            const { data: resp } = await fetchUpdateAppointments(selectedEvent.id, payload);
+             try{
+                const { data: resp } = await fetchUpdateAppointments(selectedEvent.id, payload);
+                console.log('Respuesta actualización:', resp);
 
-            const fcEvent = calendarRef.current.getApi().getEventById(selectedEvent.id);
-            fcEvent.setProp('title', resp.title);
-            fcEvent.setStart(resp.start);
-            fcEvent.setEnd(resp.end);
-            fcEvent.setExtendedProp('tipo',resp.tipo);
-            fcEvent.setExtendedProp('motivo',resp.motivo);
-            fcEvent.setExtendedProp('usuario', resp.cedula)
-            //actualiza también los props extra si es necesario
-            if(resp.curpProvisional !== undefined){
-                fcEvent.setExtendedProp('curpProvisional',resp.curpProvisional);
-                fcEvent.setExtendedProp('nombrePaciente',resp.nombrePaciente);
-            } else {
-                fcEvent.setExtendedProp('pacienteExpediente',resp.paciente.numExpediente);
-            }
+                const updatedEvent = mapToFCEvent(resp);
+                //Actualizar solo el evento
+                setEvents(prev =>
+                    prev.map(ev => ev.id === resp.id ? mapToFCEvent(resp) : ev)
+                );
+
+                //Actualizar directamente en calendairo
+                const fcEvent = calendarRef.current.getApi().getEventById(updatedEvent.id);
+                if (fcEvent) {
+                    fcEvent.setProp('title', updatedEvent.title);
+                    fcEvent.setStart(updatedEvent.start);
+                    fcEvent.setEnd(updatedEvent.end);
+                    fcEvent.setProp('backgroundColor', updatedEvent.backgroundColor);
+                    fcEvent.setProp('borderColor', updatedEvent.borderColor);
+                    fcEvent.setProp('textColor', updatedEvent.textColor);
+
+                    // Props extendidas
+                    for (const [key, value] of Object.entries(updatedEvent.extendedProps)) {
+                        fcEvent.setExtendedProp(key, value);
+                    }
+                }
+
+                message.success('Cita actualizada correctamente');
+                setModalVisible(false);
+                form.resetFields();
+                
+                
             
-            message.success('Cita actualizada correctamente');
-            calendarRef.current.getApi().refetchEvents();
-            setEditVisible(false);
-            setDetailVisible(false);
         } catch(e){
             const msg = e.response?.data?.message 
               ?? e.response?.data 

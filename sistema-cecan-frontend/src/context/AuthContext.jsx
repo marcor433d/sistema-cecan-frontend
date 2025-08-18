@@ -6,9 +6,11 @@
  * Componentes:
  * - `AuthContextProvider`: Envoltorio que expone `token`, `user`, `login`, `logout` a toda la app.
  */
+
 import React, {createContext, useState, useEffect} from 'react';
 import {fetchUserProfile} from '../services/userApi'
 ;
+import { jwtDecode } from 'jwt-decode';
 //Contexto de autentificación
 export const AuthContext = createContext();
 
@@ -60,7 +62,29 @@ export function AuthContextProvider({children}) {
         localStorage.removeItem('user');
         setToken(null);
         setUser(null);
+
     };
+    //Manejador para checar que el token se ha expirado
+    const checkTokenExpiration = () => {
+        if(!token) return;
+        try{
+            const decoded = jwtDecode(token);
+            if(decoded.exp && decoded.exp * 1000 < Date.now()){
+                console.warn('Token expirado, cerrando sesión...');
+                logout();
+            }
+        }catch {
+            console.error('Token inválido, cerrando sesión...');
+            logout();
+        }
+    };
+
+    //Ejecutar verificación de token cada cierto tiempo (1minuto)
+    useEffect(() => {
+        checkTokenExpiration();
+        const interval = setInterval(checkTokenExpiration, 60*1000);
+        return () => clearInterval(interval);
+    });
 
     //proveemos el contexto a toda la aplicación
     //todos los componentes hijos tendran acceso
