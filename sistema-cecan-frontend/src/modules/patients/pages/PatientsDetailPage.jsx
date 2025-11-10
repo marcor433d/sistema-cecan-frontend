@@ -40,7 +40,7 @@ export default function PatientsDetailPage(){
     const [reports,setReports] = useState([]);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [currentReport, setCurrentReport] = useState(null);
-    const BACKEND = 'http://localhost:8080'
+    const BACKEND = 'https://10.6.37.36:8443'
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [nameForm] = Form.useForm();
     const [justUpdated, setJustUpdated] = useState(null);
@@ -1123,7 +1123,7 @@ export default function PatientsDetailPage(){
             >
                 {currentReport && (
                     <ReportsPdfViewer
-                        url={`http://localhost:8080/api/informes/${currentReport.tipo}/${currentReport.idInforme}/pdf`}
+                        url={`https://10.6.37.36:8443/api/informes/${currentReport.tipo}/${currentReport.idInforme}/pdf`}
                     />
                 )}
             </Drawer>

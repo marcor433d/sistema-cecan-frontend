@@ -9,7 +9,8 @@ import axios from 'axios';
 
 //COnfiguración del cliente HTTP central
 const api = axios.create({
-    baseURL: 'http://localhost:8080/api',
+//antes era baseURL: 'https://10.6.37.36:8080/api'
+    baseURL: '/api',
     withCredentials:true,
 });
 
