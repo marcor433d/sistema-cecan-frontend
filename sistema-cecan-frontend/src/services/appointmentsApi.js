@@ -157,3 +157,12 @@ export function fetchUserAusencias(usuarioCedula) {
 export function fetchMeAppointments(usuarioCedula){
     return api.get(`/citas/mis-citas/${usuarioCedula}`)
 }
+
+/**
+ * Obtiene una cita por su ID.
+ * @param {number|string} id - ID de la cita.
+ * @returns {Promise}
+ */
+export function fetchAppointmentById(id) {
+    return api.get(`/citas/${id}`);
+}

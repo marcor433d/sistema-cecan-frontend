@@ -16,6 +16,7 @@
     "@fullcalendar/interaction": "^6.1.17",
     "@fullcalendar/react": "^6.1.17",
     "@fullcalendar/timegrid": "^6.1.17",
+    "@stomp/stompjs": "^7.1.1",
     "antd": "^5.25.0",
     "axios": "^1.9.0",
     "clsx": "^2.1.1",
@@ -31,6 +32,7 @@
     "react-router-dom": "^7.6.0",
     "react-to-print": "^3.1.0",
     "recharts": "^2.15.3",
+    "sockjs-client": "^1.6.1",
     "yup": "^1.6.1"
   },
   "devDependencies": {
@@ -42,6 +44,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "rollup-plugin-node-polyfills": "^0.2.1",
     "vite": "^6.3.5"
   }
 }

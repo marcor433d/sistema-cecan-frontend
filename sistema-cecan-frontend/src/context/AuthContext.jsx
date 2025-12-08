@@ -29,6 +29,7 @@ export function AuthContextProvider({children}) {
     //Al montar, si hay token peor no user, obtenemos el perfil
     useEffect(() => {
         if(token && !user) {
+            console.log("Fetch user profile");
             fetchUserProfile()
                 .then((response) => {
                     setUser(response.data);
@@ -40,6 +41,9 @@ export function AuthContextProvider({children}) {
         }
     },[token,user]);
 
+    useEffect(() => {
+    console.log("token:", token, "user:", user);
+    }, [token, user]);
 
     //funcion para iniciar sesión y cerrar
     const login = async (jwt) =>{

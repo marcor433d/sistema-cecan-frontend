@@ -20,11 +20,12 @@ import { fetchCalendarEvents, fetchCreateAppointments, fetchUpdateAppointments,
         fetchUserAusencias} from '../../../services/appointmentsApi';
 import { fetchTipoCitas, fetchEstadoCitas } from '../../../services/enumsApi';
 import moment from 'moment';
-import { fetchUsers } from '../../../services/userApi';
+import { fetchUsers} from '../../../services/userApi';
 import { AuthContext } from '../../../context/AuthContext';
 import { useLoading } from "../../../hooks/useLoading";
 import AbsenceDatePicker from '../../../components/AbsenceDatePicker';
 import EventLegend from '../../../components/EventLegend';
+import notificationApi from '../../../services/notificationApi';
 
 const { Title } = Typography;
 
@@ -118,6 +119,9 @@ export default function CalendarPage(){
     const [appointmentError, setAppointmentError] = useState(null);
     const [festivoError,setFestivoError] = useState(null);
     const [ausenciaError, setAusenciaError] = useState(null);
+
+    const notified10Ref = useRef(new Set());
+    const notified5Ref = useRef(new Set());
 
     //CONSOLE LOG
     useEffect(() => {
@@ -217,21 +221,46 @@ export default function CalendarPage(){
     }, [fullEvents, filterField,filterValue]);
 
     useEffect(() => {
+    
+
         const interval = setInterval(async () => {
             const now = new Date();
             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(),23,59,59);
 
+            console.log("🕷️ Verificando notificaciones", now.toISOString());
+            console.log("Eventos en memoria: ", eventsRef.current);
+
+
             const todayEvents = eventsRef.current.filter(ev => {
                 const start = new Date(ev.start);
-                return start >= todayStart && start <= todayEnd;
+                return (
+                    start >= todayStart && start <= todayEnd &&
+                    ev.extendedProps && ev.extendedProps.estado &&
+                    ev.extendedProps.usuarioCedula
+                );
             });
+
+            console.log("✅ Eventos que pasan filtro:", todayEvents);
 
 
 
             for(const ev of todayEvents){
                 const start = new Date(ev.start);
                 const end = new Date(ev.end);
+
+                const usuarioCedula = ev.usuarioCedula || ev.extendedProps?.usuarioCedula;
+                const estado = ev.estado || ev.extendedProps?.estado;
+                // aseguramos que ev.extendedProps exista antes de usarlo
+                if (!ev.extendedProps) continue;
+
+                console.log("📌 Evento listo para notificación:", {
+                    id: ev.id,
+                    usuarioCedula,
+                    estado,
+                    start: ev.start
+                });
+
                 let nuevoEstado = null;
 
                 if(ev.extendedProps.estado === 'CANCELADA') continue;
@@ -262,12 +291,52 @@ export default function CalendarPage(){
                     }catch(err){
                         console.warn('Error actualizando estado de cita:', err);
                     }
+
                 }else {
                     console.log(`No se cambia estado de ${ev.id}`);
                 }
+                //Notificación de 10 y 5 minutos
+                const diffMs = start - now;
+                const diffMin = Math.floor(diffMs / 60000);
+                const usuarioId= ev.extendedProps?.usuarioCedula;
+                console.log(`⏱️ Evento ${ev.id} - faltan ${diffMin} minutos`);
+
+                try{
                     
+
+                    if(diffMin <= 10 && diffMin > 5 && !notified10Ref.current.has(ev.id)){
+                        notified10Ref.current.add(ev.id);
+                        await notificationApi.createNotification({
+                           mensaje:`La cita de ${ev.extendedProps.pacienteNombre} empieza en 10 minutos`,
+                            leida: false,
+                            fecha: now.toISOString(),
+                            usuario: {cedula: usuarioId},
+                            tipo: "CITA",
+                            referenciaId: ev.id,
+                            referenciaModulo: "citas"
+                        });
+                        console.log('Notificación de 10 minutos creada');
+                    } else if(diffMin <= 5 && diffMin > 0 && !notified5Ref.current.has(ev.id)){
+                        notified5Ref.current.add(ev.id);
+                        await notificationApi.createNotification({
+                           mensaje:`La cita de ${ev.extendedProps.pacienteNombre} empieza en 5 minutos`,
+                            leida: false,
+                            fecha: now.toISOString(),
+                            usuario:{cedula: usuarioId},
+                            tipo: "CITA",
+                            referenciaId: ev.id,
+                            referenciaModulo: "citas"
+                        });
+                        console.log('Notificación de 5 minutos creada');
+                    }
+                }catch(err) {
+                    console.warn('Error creando notificación:', err);
                 }
-        }, 60000);
+
+                }
+                
+                
+        }, 30000);
         return () => clearInterval(interval);
     },[]);
 

@@ -4,8 +4,8 @@ import api from './api';
 /**
  * Obtiene todos los pacientes registrados.
  */
-export function fetchPatients() {
-    return api.get('/pacientes')
+export function fetchPatients(page=0, size=10) {
+    return api.get(`/pacientes?page=${page}&size=${size}`);
 }
 
 /**

@@ -27,12 +27,16 @@ export default function PatientsPage(){
     /** Hook de React Router para redireccionar entre rutas */
     const navigate = useNavigate();
 
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(10);
+    const [totalPacientes, setTotalPacientes] = useState(0);
+
     /**
      * Hook que se ejecuta una vez al montar el componente.
      * Llama a la función que carga todos los pacientes.
      */
     useEffect(() => {
-        loadAll();
+        loadPage(0);
         fetchAllDiagnosticos()
         .then(res => setDiagnosticos(res.data))
         .catch(() => message.error('No puede cargar diagnósticos'));
@@ -42,18 +46,27 @@ export default function PatientsPage(){
      * Carga todos los pacientes desde el backend.
      * Maneja estados de carga y errores.
      */
-    const loadAll = async () => {
+    const loadPage = async (newPage = 0) => {
         setError(null);
         setLoading(true);
 
         try{
-            const{data} = await fetchPatients();
-            setPacientes(data);
+            const{data} = await fetchPatients(newPage, size);
+            setPacientes(data.content);
+            setTotalPacientes(data.totalElements);
+            setPage(newPage);
         }catch(e) {
             setError(e);
         } finally {
             setLoading(false);
         }
+    };
+
+    const loadAll = () => {
+        form.resetFields();
+        setResultadosCount(0);
+        loadPage(0);
+        setDrawerVisible(false);
     };
 
     
@@ -76,6 +89,8 @@ export default function PatientsPage(){
             const { data } = await fetchSearchPatientsAdvanced(payload);
             setPacientes(data);
             setResultadosCount(data.length);
+             setTotalPacientes(data.length);
+             setPage(0);
         }catch(e){
             setError(e);
         }finally{
@@ -259,7 +274,13 @@ export default function PatientsPage(){
                 columns={columns}
                 rowKey="numExpediente"
                 loading={loading}
-                pagination={{pageSize: 10}}
+                pagination={{
+                    current: page+1,
+                    total: totalPacientes,
+                    pageSize: size,
+                    onChange: (newPage) => loadPage(newPage - 1),
+                    showSizeChanger:false
+                }}
                 bordered
                 size="middle"
                 onRow={(record) => ({

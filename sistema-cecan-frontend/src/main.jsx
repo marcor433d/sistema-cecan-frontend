@@ -18,6 +18,7 @@ import App from './App.jsx';
 import { AuthContextProvider } from './context/AuthContext.jsx';
 import { BrowserRouter } from 'react-router-dom';
 
+
 // Renderiza la app dentro del elemento raíz del DOM
 ReactDOM.createRoot(document.getElementById('root')).render(
 <React.StrictMode>

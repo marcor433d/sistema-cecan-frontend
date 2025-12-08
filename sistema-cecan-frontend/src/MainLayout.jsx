@@ -12,6 +12,7 @@ import { useNavigate, Navigate, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "./context/useAuth";
 
 import logo from './styles/logo-cecan.png';
+import NotificationBell from "./components/notifications/NotificationBell";
 
 const {Sider, Header, Content, Footer} = Layout;
 const { Text } = Typography
@@ -94,17 +95,17 @@ export default function MainLayout() {
                     <Typography.Text style={{display: 'block', fontSize: 12, color: 'rgba(255,255,255,0.85)'}}>
                         {user?.puesto}
                     </Typography.Text>
-                </div>
-                <div style={{textAlign: 'center', marginTop: 12}}>
-                    <Button
-                        className="logout-button"
-                        type="text"
-                        icon={<LogoutOutlined style={{color: '#fff'}}/>}
-                        onClick={handleLogout}
-                        style={{marginTop:12,color: '#fff'}}
-                    >
-                        Cerrar sesión
-                    </Button>
+                    <div style={{marginTop:12}}>
+                        <Button
+                            className="logout-button"
+                            onClick={handleLogout}
+                            type="text"
+                            icon={<LogoutOutlined />}
+                            style={{ color: '#fff' }}
+                        >
+                            Cerrar sesión
+                        </Button>
+                    </div>
                 </div>
 
                     <Divider style={{ background: 'rgba(255,255,255,0.3)' }}/>
@@ -125,12 +126,17 @@ export default function MainLayout() {
             <Layout style={{
                 flex: 1  
             }}>
-                <Header style={{background: "#fff", padding: 0, display: 'flex', alignItems: 'center'}}>
+                <Header style={{background: "#fff", padding: 0, display: 'flex', alignItems: 'center',justifyContent: "space-between"}}>
                     <img 
                         src={logo} 
                         alt="Mi Logo" 
                         style={{ height: 40, margin: '0 24px' }} 
                     />
+                    {/* Sección derecha notificaciones, avatar y logout */}
+                    <div style= {{ display: "flex", alignItems: "center", gap: "7px", paddingRight: '24px'}}>
+                        {user?.cedula ? <NotificationBell cedula={user.cedula} /> : null}
+                    </div>
+
                 </Header>
                 <Content style={{margin: '24px 16px 0', overflow: 'auto', minWidth: 0,}}>
                     <div style={{
