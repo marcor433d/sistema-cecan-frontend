@@ -31,6 +31,8 @@ export default function PatientsPage(){
     const [size, setSize] = useState(10);
     const [totalPacientes, setTotalPacientes] = useState(0);
 
+    const[isAdvanced, setIsAdvanced] = useState(false);
+    const[advancedFilters, setAdvancedFilters] = useState(null);
     /**
      * Hook que se ejecuta una vez al montar el componente.
      * Llama a la función que carga todos los pacientes.
@@ -51,7 +53,18 @@ export default function PatientsPage(){
         setLoading(true);
 
         try{
-            const{data} = await fetchPatients(newPage, size);
+            let data;
+
+            if(isAdvanced){
+                //busqueda avanzada
+                const response = await fetchSearchPatientsAdvanced(advancedFilters, newPage, size);
+                data = response.data;
+            }else{
+                //modo normal
+                const response = await fetchPatients(newPage, size);
+                data = response.data;
+            }
+            
             setPacientes(data.content);
             setTotalPacientes(data.totalElements);
             setPage(newPage);
@@ -65,6 +78,8 @@ export default function PatientsPage(){
     const loadAll = () => {
         form.resetFields();
         setResultadosCount(0);
+        setIsAdvanced(false);
+        setAdvancedFilters(null);
         loadPage(0);
         setDrawerVisible(false);
     };
@@ -75,22 +90,24 @@ export default function PatientsPage(){
     const onAdvancedSearch = async (values = {}, term = "") => {
         setError(null);
         setLoading(true);
+        const payload = {
+            ...values,
+            edadMin: values.edadMinima || null,
+            edadMax: values.edadMaxima || null,
+            fechaIngresoInicio: values.fechaIngreso?.[0]?.format('YYYY-MM-DD') || null,
+            fechaIngresoFin: values.fechaIngreso?.[1]?.format('YYYY-MM-DD') || null,
+            fechaInicioTratamiento: values.fechaTratamiento?.[0]?.format("YYYY-MM-DD") || null,
+            fechaFinTratamiento: values.fechaTratamiento?.[1]?.format("YYYY-MM-DD") || null,
+            terminoParcial: term || values.terminoParcial || null,
+        };
         try{
-            const payload = {
-                ...values,
-                edadMin: values.edadMinima || null,
-                edadMax: values.edadMaxima || null,
-                fechaIngresoInicio: values.fechaIngreso?.[0]?.format('YYYY-MM-DD') || null,
-                fechaIngresoFin: values.fechaIngreso?.[1]?.format('YYYY-MM-DD') || null,
-                fechaInicioTratamiento: values.fechaTratamiento?.[0]?.format("YYYY-MM-DD") || null,
-                fechaFinTratamiento: values.fechaTratamiento?.[1]?.format("YYYY-MM-DD") || null,
-                terminoParcial: term || values.terminoParcial || null,
-            };
-            const { data } = await fetchSearchPatientsAdvanced(payload);
-            setPacientes(data);
-            setResultadosCount(data.length);
-             setTotalPacientes(data.length);
-             setPage(0);
+            setAdvancedFilters(payload);
+            setIsAdvanced(true);
+            const {data} = await fetchSearchPatientsAdvanced(payload,0,size);
+            setTotalPacientes(data.totalElements);
+            setPacientes(data.content);
+            setResultadosCount(data.totalElements);
+            setPage(0);
         }catch(e){
             setError(e);
         }finally{

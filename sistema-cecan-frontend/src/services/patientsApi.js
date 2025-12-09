@@ -15,8 +15,8 @@ export function fetchSearchPatients(termino){
     return api.get('/pacientes/busqueda', {params: {termino}});
 }
 
-export function fetchSearchPatientsAdvanced(termino){
-    return api.post('/pacientes/busqueda/filtrada',termino);
+export function fetchSearchPatientsAdvanced(termino,page,size){
+    return api.post(`/pacientes/busqueda/filtrada?page=${page}&size=${size}`,termino);
 }
 
 /**
