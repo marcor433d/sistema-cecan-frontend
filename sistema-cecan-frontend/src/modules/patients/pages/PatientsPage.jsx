@@ -9,6 +9,7 @@ import { Table, Input, Alert, Space, Typography, Divider, Form, Select, DatePick
 import { useNavigate } from "react-router-dom";
 import { fetchPatients,fetchSearchPatientsAdvanced } from "../../../services/patientsApi";
 import { fetchAllDiagnosticos } from "../../../services/enumsApi";
+import { useSearchParams } from "react-router-dom";
 const { Search } = Input;
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
@@ -33,16 +34,62 @@ export default function PatientsPage(){
 
     const[isAdvanced, setIsAdvanced] = useState(false);
     const[advancedFilters, setAdvancedFilters] = useState(null);
+
+    const [searchParams, setSearchParams] = useSearchParams();
+
     /**
      * Hook que se ejecuta una vez al montar el componente.
      * Llama a la función que carga todos los pacientes.
      */
     useEffect(() => {
-        loadPage(0);
         fetchAllDiagnosticos()
         .then(res => setDiagnosticos(res.data))
         .catch(() => message.error('No puede cargar diagnósticos'));
+
+        const params = Object.fromEntries([...searchParams.entries()]);
+
+        const pageFromUrl = parseInt(params.page) || 0;
+
+        //Detectar si hay filtros avanzados
+        const hasFilters = Object.keys(params).some(
+            (k) => k !== 'page' && k !== 'size'
+        );
+        if(hasFilters){
+            //recontruimos el json del backend
+            const filtro = {
+                sexo: params.sexo || null,
+                estadoCivil: params.estadoCivil || null,
+                edadMin: params.edadMin ? Number(params.edadMin) : null,
+                edadMax: params.edadMax ? Number (params.edadMax) : null,
+                diagnostico: params.diagnostico || null,
+                terminoParcial: params.terminoParcial || null,
+                tipoTratamiento: params.tipoTratamiento || null,
+                fechaIngresoInicio: params.fechaIngresoInicio || null,
+                fechaIngresoFin: params.fechaIngresoFin || null,
+                fechaInicioTratamiento: params.fechaInicioTratamiento || null,
+                fechaFinTratamiento: params.fechaFinTratamiento || null,
+            };
+
+            //activa búsqueda avanzada
+            setIsAdvanced(true);
+            setAdvancedFilters(filtro);
+            loadAdvancedFromURL(filtro, pageFromUrl);
+        }else {
+            //modo normal
+            loadPage(pageFromUrl);
+        }
+
     }, []);
+
+    /**
+     * Hook que se ejecuta cuando cambia isAdvanced o advancedFilters.
+     * Si isAdvanced es false y no hay filtros avanzados, carga todos los pacientes.
+     */
+    useEffect(() => {
+        if(!isAdvanced && advancedFilters === null){
+            loadPage(0);
+        }
+    },[isAdvanced, advancedFilters]);
 
     /**
      * Carga todos los pacientes desde el backend.
@@ -80,7 +127,9 @@ export default function PatientsPage(){
         setResultadosCount(0);
         setIsAdvanced(false);
         setAdvancedFilters(null);
-        loadPage(0);
+
+        setSearchParams({page:0, size});
+        //loadPage(0);
         setDrawerVisible(false);
     };
 
@@ -103,6 +152,16 @@ export default function PatientsPage(){
         try{
             setAdvancedFilters(payload);
             setIsAdvanced(true);
+
+            //Actualizar URL
+            setSearchParams({
+                ...Object.fromEntries(
+                    Object.entries(payload).filter(([_, v]) => v !== null && v !== undefined && v !== ''
+                )),
+                page:0,
+                size
+            });
+
             const {data} = await fetchSearchPatientsAdvanced(payload,0,size);
             setTotalPacientes(data.totalElements);
             setPacientes(data.content);
@@ -111,6 +170,21 @@ export default function PatientsPage(){
         }catch(e){
             setError(e);
         }finally{
+            setLoading(false);
+        }
+    };
+
+    const loadAdvancedFromURL = async (filters, page) => {
+        setLoading(true);
+        try{
+            const {data} = await fetchSearchPatientsAdvanced(filters, page, size);
+            setTotalPacientes(data.totalElements);
+            setPacientes(data.content);
+            setPage(page);
+        } catch(e){
+            setError(e);
+
+        } finally {
             setLoading(false);
         }
     };
@@ -295,7 +369,14 @@ export default function PatientsPage(){
                     current: page+1,
                     total: totalPacientes,
                     pageSize: size,
-                    onChange: (newPage) => loadPage(newPage - 1),
+                    onChange: (newPage) => {
+                        setSearchParams({
+                            ...(isAdvanced ? advancedFilters : {}),
+                            page: newPage -1,
+                            size
+                        });
+                        loadPage(newPage -1);
+                    },
                     showSizeChanger:false
                 }}
                 bordered
