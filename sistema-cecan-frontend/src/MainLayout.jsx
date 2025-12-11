@@ -131,6 +131,7 @@ export default function MainLayout() {
                         src={logo} 
                         alt="Mi Logo" 
                         style={{ height: 40, margin: '0 24px' }} 
+                        onClick={() => navigate('/menu')}
                     />
                     {/* Sección derecha notificaciones, avatar y logout */}
                     <div style= {{ display: "flex", alignItems: "center", gap: "7px", paddingRight: '24px'}}>

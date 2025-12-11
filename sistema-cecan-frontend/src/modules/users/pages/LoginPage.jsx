@@ -38,19 +38,24 @@ export default function LoginPage() {
             const jwt= data.token ?? data.accessToken;
             console.log('-> tiken antes de login(): ', jwt);
             login(jwt);
-            //redirige a citas
-            navigate('/citas');
+            //redirige a menu
+            navigate('/menu');
 
         }catch(err) {
-            const status = err.response?.status;
-            const errorObj = err.response?.data;
-            const apiMsg = errorObj?.message;
-            const errorCode = errorObj?.errorCode;
+           const responseData = err.response?.data;
+           const status = err.response?.status;
+           const errorCode = responseData?.errorCode;
+           const messageFromBackend = responseData?.message;
 
-            const userMsg = getLoginErrorMessage(status,errorCode,apiMsg);
-            message.error(userMsg);
+           const friendlyMessage = getLoginErrorMessage(
+            status,
+            errorCode,
+            messageFromBackend
+           );
+           message.error(friendlyMessage);
+            
         } finally {
-            setLoading(false);
+            setTimeout(() => setLoading(false), 300);
         }
     
 };

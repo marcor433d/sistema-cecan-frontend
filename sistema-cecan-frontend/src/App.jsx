@@ -43,6 +43,7 @@ import InformeIdPacientePage from "./modules/reports/pages/InformeIdPacientePage
 import SubrogadosPage from "./modules/reports/pages/SubrogadosPage";
 import PrivacyPolicyPage from "./modules/users/pages/PrivacyPolicyPage";
 import TerminosCondicionesPage from "./modules/users/pages/TerminosCondicionesPage";
+import MenuPage from "./modules/menu/pages/MenuPage";
 
 /**
  * Ruta privada que verifica si hay un token activo en el contexto de autenticación.
@@ -71,8 +72,9 @@ export default function App() {
               <MainLayout/>
             </PrivateRoute>
             }>
-              {/* Ruta por defecto redirige a /citas */}
-              <Route index element={<Navigate to="citas" replace />} />
+              {/* Ruta por defecto redirige a /menu */}
+              <Route index element={<Navigate to="menu" replace />} />
+              <Route path="menu" element={<MenuPage />} />
               <Route path="citas" element={<CalendarPage />} />
               <Route path="pacientes" element={<PatientsPage />} />
               {/* detalle de un paciente */}

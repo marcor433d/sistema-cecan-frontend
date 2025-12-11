@@ -11,23 +11,23 @@
  * @param {string} [defaultMsg] - Mensaje por defecto a mostrar si no hay coincidencias.
  * @returns {string} Mensaje listo para mostrar al usuario.
  */
-export function getLoginErrorMessage(status, errorCode,defaultMsg) {
+export function getLoginErrorMessage(status, errorCode,message) {
     switch (status) {
         case 400:
-            return 'Por favor ingresa cédula y contraseña';
+            return message || 'Solicitud incorrecta. Por favor verifica los datos ingresados.';
         case 401:
             //ERRORES que vienen desde el backend
             if (errorCode === 'INVALID_CREDENTIALS') {
                 return 'La cédula o la contraseña son incorrectas';
             }
-            return 'No autorizado. Verifica tus credenciales.';
+            return message || 'No autorizado. Verifica tus credenciales.';
         case 500:
             if(errorCode=== 'SERVER_ERROR') {
                 return 'Ocurrió un error en el servidor. Intenta de nuevo más tarde.';
             }
-            return 'Error interno. Por favor inténtalo nuevamente.';
+            return message || 'Error interno. Por favor inténtalo nuevamente.';
         default:
             //cualquiera otro fallback
-            return defaultMsg || 'Ocurrió un error inesperado.';
+            return message || 'Ocurrió un error inesperado.';
     }
 }

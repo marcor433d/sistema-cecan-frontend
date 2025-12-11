@@ -43,37 +43,41 @@ api.interceptors.request.use(config =>{
 api.interceptors.response.use(
     response => response,
     error => {
-        //Si no hay respuesta, p.e. caída de red
+        
         if(!error.response){
-            message.error('Sin conexión al servidor. Revisa tu red');
+            message.error('Error de red. Por favor verifica tu conexión.');
             return Promise.reject(error);
         }
+        const {status, data} = error.response;
+        const url = error.config?.url;
 
-        const { status, data } = error.response;
+        //No mostramos mensajes de error para el endpoint de login aquí
+        if(url?.endsWith('/login')){
+            return Promise.reject(error);
+        }
+        
+        if(data?.errorCode === 'VALIDATION_ERROR' && Array.isArray(data.details)){
 
-        if(data?.code === 'VALIDATION_ERROR' && Array.isArray(data.details)){
-            //devolvemos un shape específico para el form
             return Promise.reject({validation: data.details});
         }
 
         //Mapeo de códigos de negocio  / HTTP a mensajes de usuario
         switch (data.code || status) {
-            case 'VALIDATION_ERROR':
-                message.error(data.message);
-                break;
             case 401:
                 message.error('No estás autorizado. Por favor inicia sesión.');
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
+                //redirecciona a login
                 window.location.href = '/login';
                 break;
             case 404:
-                message.error('Recurso no encontrado.');
+                message.error('Recurso no encontrado. La ruta solicitada no existe.');
                 break;
             case 429:
                 message.error('Has excedido el límite de solicitudes. Intenta más tarde.');
                 break;
             case 500:
+            case 'SERVER_ERROR':
             default:
                 message.error(data.message || 'Error en el servidor. Intenta de nuevo más tarde.');
         }
